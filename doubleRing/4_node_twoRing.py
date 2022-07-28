@@ -2,6 +2,7 @@
 # Solved same problem as gillespie.py with different method
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 from scipy.integrate import odeint
 import os
 
@@ -102,14 +103,14 @@ def RHS(X, t, p):
     return f
 
 # define initial conditions (firing rates)
-sl_1 = 10
-sl_2 = 20
-sl_3 = 30
-sl_4 = 40
-sr_1 = 50
-sr_2 = 60
-sr_3 = 70
-sr_4 = 80
+sl_1 = 0.001
+sl_2 = 0.01
+sl_3 = 0.01
+sl_4 = 0.001
+sr_1 = 0.001
+sr_2 = 0.001
+sr_3 = 0.001
+sr_4 = 0
 
 # define constants/reaction parameters (dependent on c, figure those out)
 midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
@@ -140,7 +141,6 @@ X0 = [sl_1, sl_2, sl_3, sl_4, sr_1, sr_2, sr_3, sr_4]
 abserr = 1.0e-8
 relerr = 1.0e-6
 stoptime = 0.8
-#numpoints = 1001
 numpoints = 1000 # number of time points in [0, stoptime]
 
 # set up time
@@ -149,11 +149,34 @@ t = np.linspace(0, stoptime, numpoints)
 # call the ODE solver
 sol = odeint(RHS, X0, t, args=(p,), atol=abserr, rtol=relerr) 
 
-print(sol[:][1])
-print(sol.shape)
-
 # in addition to firing rate vs time with all theta positions as their own line,
 # plot firing rate vs theta for each ring. 
+
+theta_space, time = np.meshgrid(midpoints, t)
+
+#print(sol[:, 0:4]) # left ring
+#print(sol[:, 4:8].shape) # right ring
+#print(time.shape)
+#print(theta_space.shape)
+
+# plot the left ring
+
+def plotfriend(sol_start, sol_stop)
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+surf = ax.plot_surface(time, theta_space, sol[:, 0:4], rstride=1, cstride=1, cmap='viridis') #
+ax.set_title("Firing Rate vs Time")
+ax.set_xlabel('Time')
+ax.set_ylabel(r'$\theta$')
+ax.set_zlabel(r'$s_l$')
+plt.colorbar(surf)
+filename = '3d_plot_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
+fig.savefig(filename)
+os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing') # only run with this line uncommented if you are Nick
+
+
+
+
 
 
 
