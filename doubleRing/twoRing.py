@@ -74,10 +74,10 @@ def RHS(X, t, p):
     return f
 
 # define initial conditions (firing rates)
-sl_1 = 40
-sl_2 = 120
-sr_1 = 20
-sr_2 = 80
+sl_1 = 0
+sl_2 = 0.001
+sr_1 = 0.001
+sr_2 = 0
 
 # define constants/reaction parameters (dependent on c, figure those out)
 midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, 2)
@@ -87,7 +87,7 @@ theta_2 = midpoints[1]
 
 
  # can change b0, delta_b
-b0 = -10
+b0 = -5
 delta_b = 1
 br = b0 + delta_b
 bl = b0 = delta_b
@@ -131,7 +131,7 @@ def plotFriend(tt, sol):
     plt.ylabel('Firing Rate (Hz)')
     filename = 'Firing_Rate_discr_'+ str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
     plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing') #saves picture to your pictures
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing') # only run with this line uncommented if you are Nick
     plt.show()
 
 
