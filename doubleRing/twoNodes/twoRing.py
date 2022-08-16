@@ -84,13 +84,13 @@ midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, 2)
 dTheta = intervals[0][-1] - intervals[0][0]
 theta_1 = midpoints[0]
 theta_2 = midpoints[1]
-
+print(dTheta)
 
  # can change b0, delta_b
 b0 = -5
 delta_b = 1
 br = b0 + delta_b
-bl = b0 = delta_b
+bl = b0 - delta_b
 
  # can change phiDeg, psiDeg
 phiDeg = 90
