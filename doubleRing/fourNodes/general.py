@@ -1,12 +1,20 @@
+# Purposes: deterministic/ continuous apprpoximation of ODEs derived from chemical reaction network
+# Solved same problem as gillespie.py with different method
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 import os
 
+# set number of spacial discretizations, MUST BE AN EVEN NUMBER
+spatial_num = 2
 
+# handles offsets in ring connections
+b0 = 40
+delta_b = 30
+br = b0 + delta_b
+bl = b0 - delta_b
 
-spatial_num = 4
 
 def thetaDivider(thetaStart, thetaStop, n, thetaDensity):
     """
@@ -57,14 +65,105 @@ def ws(theta):
     weightSame = J0 + J1*np.cos(phi - theta - psi)
     return weightSame
 
-
-def RHS(X, t, p):
+def wd(theta):
     """
-    Defines the differential equations for a coupled chemical reaction network.
+    weight function for the "different" ring. 
+    
+    Arguments: 
+            Theta: the midpoint of our discretization intervals
+    """
+    [K0, K1] = [-5, 80]
+    # can change the offset connection points with these angles below
+    phiDeg = 90
+    psiDeg = 45
+    phi = phiDeg*(np.pi)/180
+    psi = psiDeg*(np.pi)/180
+    weightDifferent = K0 + K1*np.cos(phi - theta - psi)
+    return weightDifferent
+
+def fl(S, theta_step, theta_1, theta_2, theta_3, theta_4, Tau):
+    sl_1, sl_2, sl_3, sl_4, sr_1, sr_2, sr_3, sr_4 = S
+    b0 = 40
+    delta_b = 30
+    br = b0 + delta_b
+    bl = b0 - delta_b
+    force_left = np.maximum(theta_step*(1/(2*np.pi))*(ws(theta_1)*sl_1 + wd(theta_1)*sr_1 + ws(theta_2)*sl_2 + wd(theta_2)*sr_2 + ws(theta_3)*sl_3 + wd(theta_3)*sr_3 + ws(theta_4)*sl_4 + wd(theta_4)*sr_4) + bl, 0)/Tau
+    #force_left = (theta_step*(1/(2*np.pi))*(ws(theta_1)*sl_1 + wd(theta_1)*sr_1 + ws(theta_2)*sl_2 + wd(theta_2)*sr_2 + ws(theta_3)*sl_3 + wd(theta_3)*sr_3 + ws(theta_4)*sl_4 + wd(theta_4)*sr_4) + bl)/Tau
+    return force_left
+
+def fr(theta_step, theta_1, theta_2, theta_3, theta_4, Tau):
+    force_right = np.maximum(theta_step*(1/(2*np.pi))*(wd(theta_1)*sl_1 + ws(theta_1)*sr_1 + wd(theta_2)*sl_2 + ws(theta_2)*sr_2 + wd(theta_3)*sl_3 + ws(theta_3)*sr_3 + wd(theta_4)*sr_4 + ws(theta_4)*sr_4) + br, 0)/Tau
+    return force_right
+
+def ic_maker(spatial_discretizations):
+    n = 2*spatial_discretizations
+    i = 0
+    s0 = np.zeros(n)
+    while i < n:
+        s0[i] = i
+        i = i + 1
+    print(s0)
+    return s0
+       
+def weight_maker(spatial_discretizations):
+    n = 2*spatial_discretizations
+    weightVec = np.zeros(n)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, n, n)
+    i = 0
+    while (i < n):
+        if i < n/2:
+            weightVec[i] = ws(midpoints[i])
+            print(ws(midpoints[i]))
+        if i >= n/2: 
+            weightVec[i] = wd(midpoints[i])
+            print(wd(midpoints[i]))
+        i = i + 1
+    print(weightVec)
+    return weightVec
+
+#ic_maker(8)
+#weight_maker(8)
+
+def SYS(t, S):
+    weightVec = weight_maker(spatial_num)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, 2*spatial_num, 2*spatial_num)
+    theta_step = intervals[0][-1] - intervals[0][0]
+
+    # return vector created with while looooop
+    states = np.zeros(2*spatial_num)
+    i = 0
+    while i < 2*spatial_num:
+        if i < spatial_num:
+            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVec, S) + bl, 0) 
+        if i >= spatial_num:
+            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVec, S) + br, 0) 
+        i = i + 1
+    return states
+
+s0 = ic_maker(spatial_num)
+t_span = [0, 1]
+
+
+SYS(1, s0)
+solve_ivp(SYS, t_span, s0)
+
+
+
+
+
+
+
+
+
+
+
+def RHS(t, X, p):
+    """
+    Defines the differential equation system.
     
     Arguments: 
         X : vector of the firing rates for varying theta:
-                X = [theta_1, theta_2, ... , theta_spacial_num]
+                X = [sl_1, sl_2, ... , sr_spatial_num]
         t : time
         p : vector of the parameters:
                 p = [dTheta, theta_1, theta_2, bl, br, phi, psi, Tau]
@@ -85,13 +184,97 @@ def RHS(X, t, p):
          (-sr_4 + np.maximum(theta_step*(1/(2*np.pi))*(wd(theta_1)*sl_1 + ws(theta_1)*sr_1 + wd(theta_2)*sl_2 + ws(theta_2)*sr_2 + wd(theta_3)*sl_3 + ws(theta_3)*sr_3 + wd(theta_4)*sr_4 + ws(theta_4)*sr_4) + br, 0))/Tau]
     return f
 
+# define initial conditions (firing rates)
+sl_1 = 80
+sl_2 = 90
+sl_3 = 100
+sl_4 = 90
+sr_1 = 50
+sr_2 = 40
+sr_3 = 30
+sr_4 = 50
+
+# define constants/reaction parameters (dependent on c, figure those out)
+midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
+theta_step = intervals[0][-1] - intervals[0][0]
+#print("midpoints:", midpoints)
+#print("intervals:", intervals)
+#print(theta_step)
+#theta_1 = midpoints[0]
+#theta_2 = midpoints[1]
+#theta_3 = midpoints[2]
+#theta_4 = midpoints[3]
+
+ # can change b0, delta_b. Ratio in paper was -5
+b0 = 40
+delta_b = 30
+br = b0 + delta_b
+bl = b0 - delta_b
+
+# Tau represents travel time of signal between synapses. Small, around 80ms. 
+Tau = 0.080
+#Tau = 1
+
+# pack up parameters and ICs
+#p = [theta_step, theta_1, theta_2, theta_3, theta_4, bl, br, Tau]
+#X0 = [sl_1, sl_2, sl_3, sl_4, sr_1, sr_2, sr_3, sr_4]
+
+# ODE solver parameters
+abserr = 1.0e-8
+relerr = 1.0e-6
+stoptime = 0.5
+numpoints = 1000 # number of time points in [0, stoptime]
+
+# set up time
+t = np.linspace(0, stoptime, numpoints)
+
+# call the ODE solver
+#sol = solve_ivp(RHS, X0, t, args=(p,), atol=abserr, rtol=relerr) 
+#sol = solve_ivp(RHS, [0, stoptime], X0, args=(p,)) 
 
 
-# function that generates from sl_i + onwards for any n
 
-def RHSconstructor(n):
-    # takes spacial discretizations, 
-    # returns f in the above and X that is passed in
+# the following confirms that we've reached an intersection of nullcline at the steady state. Fixed point acheived. 
+print(fl(X0, theta_step, theta_1, theta_2, theta_3, theta_4, Tau))
+print(fr(theta_step, theta_1, theta_2, theta_3, theta_4, Tau))
+
+
+# create meshgrids in order to plot
+theta_space, time = np.meshgrid(midpoints, t)
+
+# create jank plot functions, probably shouldn't do this. 
+def plotfriend_left(sol_start, sol_stop):
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    surf = ax.plot_surface(time, theta_space, sol[:, sol_start:sol_stop], rstride=1, cstride=1, cmap='viridis') #
+    ax.set_title("Firing Rate vs Time")
+    ax.set_xlabel('Time')
+    ax.set_ylabel(r'$\theta$')
+    ax.set_zlabel(r'$s_l$')
+    #ax.view_init(30, 132) #uncomment to see backside
+    plt.colorbar(surf)
+    filename = 'LR_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
+    fig.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
+
+
+def plotfriend_right(sol_start, sol_stop):
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    surf = ax.plot_surface(time, theta_space, sol[:, sol_start:sol_stop], rstride=1, cstride=1, cmap='viridis') #
+    ax.set_title("Firing Rate vs Time")
+    ax.set_xlabel('Time')
+    ax.set_ylabel(r'$\theta$')
+    ax.set_zlabel(r'$s_l$')
+    #ax.view_init(30, 180) uncomment to see backside
+    plt.colorbar(surf)
+    filename = 'RR_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
+    fig.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
+
+
+#plotfriend_left(0, 4)
+#plotfriend_right(4, 8)
 
 
 

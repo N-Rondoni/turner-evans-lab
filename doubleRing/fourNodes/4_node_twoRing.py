@@ -103,14 +103,14 @@ def RHS(X, t, p):
     return f
 
 # define initial conditions (firing rates)
-sl_1 = 0.1
-sl_2 = 0.2
-sl_3 = 0.1
-sl_4 = 0.3
-sr_1 = 0.1
-sr_2 = 0.2
-sr_3 = 0.3
-sr_4 = 0.1
+sl_1 = 80
+sl_2 = 90
+sl_3 = 100
+sl_4 = 90
+sr_1 = 50
+sr_2 = 40
+sr_3 = 30
+sr_4 = 50
 
 # define constants/reaction parameters (dependent on c, figure those out)
 midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
@@ -129,8 +129,9 @@ delta_b = 30
 br = b0 + delta_b
 bl = b0 - delta_b
 
- # Tau represents travel time of signal between synapses. Small, around 80ms. 
+# Tau represents travel time of signal between synapses. Small, around 80ms. 
 Tau = 0.080
+#Tau = 1
 
 # pack up parameters and ICs
 p = [theta_step, theta_1, theta_2, theta_3, theta_4, bl, br, Tau]
@@ -148,6 +149,8 @@ t = np.linspace(0, stoptime, numpoints)
 # call the ODE solver
 sol = odeint(RHS, X0, t, args=(p,), atol=abserr, rtol=relerr) 
 
+print(sol[-1, 0:8])
+
 # create meshgrids in order to plot
 theta_space, time = np.meshgrid(midpoints, t)
 
@@ -164,7 +167,7 @@ def plotfriend_left(sol_start, sol_stop):
     plt.colorbar(surf)
     filename = 'LR_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
     fig.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/Meeting_7_28') # only run with this line uncommented if you are Nick
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
 
 
 def plotfriend_right(sol_start, sol_stop):
@@ -179,7 +182,7 @@ def plotfriend_right(sol_start, sol_stop):
     plt.colorbar(surf)
     filename = 'RR_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
     fig.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/Meeting_7_28') # only run with this line uncommented if you are Nick
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
 
 
 plotfriend_left(0, 4)

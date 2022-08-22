@@ -85,17 +85,15 @@ def sys(S):
     Tau = 0.080 # time constant in ms
 
     # S = [sl1, sl2, sl3, sl4, sr1, sr2, sr3, sr4]
-    return [-S[0] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl, 0),
-            -S[1] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl,
-            -S[2] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl,
-            -S[3] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl,
+    return [(-S[0] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl, 0))/Tau,
+            (-S[1] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl, 0))/Tau,
+            (-S[2] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl, 0))/Tau, 
+            (-S[3] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + wd(theta_1)*S[4] + ws(theta_2)*S[1] + wd(theta_2)*S[5] + ws(theta_3)*S[2] + wd(theta_3)*S[6] + ws(theta_4)*S[3] + wd(theta_4)*S[7]) + bl, 0))/Tau, 
                                                  # These terms are the same as the above, just reordered with a more obvious pattern
-            -S[4] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br,
-            -S[5] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br,
-            -S[6] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br,
-            -S[7] + ((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br] 
-
-
+            (-S[4] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br, 0))/Tau,
+            (-S[5] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br, 0))/Tau,
+            (-S[6] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br, 0))/Tau,
+            (-S[7] + np.maximum(((1/(2*np.pi)))*(del_theta)*(ws(theta_1)*S[0] + ws(theta_2)*S[1] + ws(theta_3)*S[2] + ws(theta_3)*S[3] + wd(theta_1)*S[4] + wd(theta_2)*S[5] + wd(theta_3)*S[6] + wd(theta_4)*S[7]) + br, 0))/Tau]
 
 
 init_guess = [0.1, 0.2, 0.1, 0.3, 0.1, 0.2, 0.3, 0.1]
