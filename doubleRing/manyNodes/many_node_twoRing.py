@@ -1,30 +1,20 @@
-# Purposes: deterministic/ continuous apprpoximation of ODEs derived from chemical reaction network
-# Solved same problem as gillespie.py with different method
+# Purpose:
+# Use:
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from scipy.integrate import solve_ivp
 import os
 
-# set number of spacial discretizations, MUST BE AN EVEN NUMBER
-spatial_num = 8
-
-# handles offsets in ring connections
-b0 = 40
-delta_b = 30
-br = b0 + delta_b
-bl = b0 - delta_b
-
-
 def thetaDivider(thetaStart, thetaStop, n, thetaDensity):
     """
     Creates subintervals and needed midpoints for spacial discretization
 
     Arguments: 
-        thetaStart   : starting spacial value (real number)
-        thetaStop    : ending spacial value (real number)
+        thetaStart   : starting spatial value (real number)
+        thetaStop    : ending spatial value (real number)
         n            : number of subintervals
-        thetaDensity : number of values in each subinterval
+        thetaDensity : number of values in each subinterval   TODO: refactor, thetaDensity is irrelevant
 
     """
     endPoints = np.linspace(thetaStart, thetaStop, num = n+1)    
@@ -45,7 +35,6 @@ def thetaDivider(thetaStart, thetaStop, n, thetaDensity):
 
     return midpoints, intervals
 
-
 # create two subintervals comprised of two theta values each. Store as intervals.
 # create an array of the midpoints of the intervals.
 
@@ -65,6 +54,7 @@ def ws(theta):
     weightSame = J0 + J1*np.cos(phi - theta - psi)
     return weightSame
 
+
 def wd(theta):
     """
     weight function for the "different" ring. 
@@ -81,6 +71,7 @@ def wd(theta):
     weightDifferent = K0 + K1*np.cos(phi - theta - psi)
     return weightDifferent
 
+
 def ic_maker(spatial_discretizations):
     n = 2*spatial_discretizations
     i = 0
@@ -90,7 +81,8 @@ def ic_maker(spatial_discretizations):
         i = i + 1
     #print(s0)
     return s0
-       
+
+
 def weight_maker(spatial_discretizations):
     n = 2*spatial_discretizations
     weightVec = np.zeros(n)
@@ -99,16 +91,12 @@ def weight_maker(spatial_discretizations):
     while (i < n):
         if i < n/2:
             weightVec[i] = ws(midpoints[i])
-            print(ws(midpoints[i]))
         if i >= n/2: 
             weightVec[i] = wd(midpoints[i])
-            print(wd(midpoints[i]))
         i = i + 1
     #print(weightVec)
     return weightVec
 
-#ic_maker(8)
-#weight_maker(8)
 
 def SYS(t, S):
     weightVec = weight_maker(spatial_num)
@@ -126,15 +114,43 @@ def SYS(t, S):
         i = i + 1
     return states
 
-s0 = ic_maker(spatial_num)
-t_span = [0, 1]
 
-SYS(1, s0)
-sol = solve_ivp(SYS, t_span, s0)
-print(sol)
+if __name__=='__main__':
+    ## PARAMTERS TO CHANGE:______________________________________________________________________________
+    # set number of spatial discretizations in each ring, must be an even number                       #|
+    spatial_num = 100                                                                               
+                                                                                                       #|
+    # handles offsets in ring connections                                                              #|
+    b0 = 40                                                                                            #|
+    delta_b = 30                                                                                       #|
+    br = b0 + delta_b                                                                                  #|   
+    bl = b0 - delta_b                                                                                  #|
+                                                                                                       #| 
+    # what time window should the PDE be approximated on                                               #|
+    t_span = [0, 1]                                                                                    #|
+    ## END CHANGABLE PARAMETERS. (Can also edit initial conditions in function ic_maker)_______________#|
 
-# create meshgrids in order to plot
-#theta_space, time = np.meshgrid(midpoints, t)
+
+    # define necessary constants, parameters used in solver/plotting
+    t_start, t_stop = t_span
+    t = np.linspace(t_start, t_stop, 100)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, 2*spatial_num, 2*spatial_num)
+    theta_space, time = np.meshgrid(midpoints, t)
+    s0 = ic_maker(spatial_num)
+
+
+    # Finally call  solver
+    # setting dense_output to True computes a continuous solution. Default is false.
+    sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
+
+    #print(sol)
+    print(sol.t.shape)
+    print(sol.t)
+
+
+
+
+# SCUFFED PLOTTING BELOW, REWORK REWORK
 
 # create jank plot functions, probably shouldn't do this. 
 def plotfriend_left(sol_start, sol_stop):
@@ -167,8 +183,8 @@ def plotfriend_right(sol_start, sol_stop):
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
 
 
+
 #plotfriend_left(0, 4)
 #plotfriend_right(4, 8)
-
 
 
