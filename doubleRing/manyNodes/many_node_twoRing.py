@@ -72,7 +72,7 @@ def wd(theta):
     return weightDifferent
 
 
-def ic_maker(spatial_discretizations):
+def ic_maker_enum(spatial_discretizations):
     n = 2*spatial_discretizations
     i = 0
     s0 = np.zeros(n)
@@ -83,24 +83,36 @@ def ic_maker(spatial_discretizations):
     return s0
 
 
+def ic_maker_erf(spatial_discretizations):
+    n = 2*spatial_discretizations
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, n, n)
+    s0 = (2/np.pi)*np.exp(-(midpoints-(np.pi/2))**2)
+    #s0 = midpoints
+    return s0
+
+
 def weight_maker(spatial_discretizations):
     n = 2*spatial_discretizations
-    weightVec = np.zeros(n)
-    midpoints, intervals = thetaDivider(-np.pi, np.pi, n, n)
+    weightVecL = np.zeros(n)
+    weightVecR = np.zeros(n)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_discretizations, spatial_discretizations)
+    # need to loop over the same midpoints for both left and right rings
+    midpoints = np.concatenate((midpoints, midpoints))
     i = 0
     while (i < n):
         if i < n/2:
-            weightVec[i] = ws(midpoints[i])
+            weightVecL[i] = ws(midpoints[i])
+            weightVecR[i] = wd(midpoints[i])
         if i >= n/2: 
-            weightVec[i] = wd(midpoints[i])
+            weightVecL[i] = wd(midpoints[i])
+            weightVecR[i] = ws(midpoints[i])
         i = i + 1
-    #print(weightVec)
-    return weightVec
+    return weightVecL, weightVecR
 
 
 def SYS(t, S):
-    weightVec = weight_maker(spatial_num)
-    midpoints, intervals = thetaDivider(-np.pi, np.pi, 2*spatial_num, 2*spatial_num)
+    weightVecL, weightVecR = weight_maker(spatial_num)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
     theta_step = intervals[0][-1] - intervals[0][0]
 
     # return vector created with while looooop
@@ -108,9 +120,9 @@ def SYS(t, S):
     i = 0
     while i < 2*spatial_num:
         if i < spatial_num:
-            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVec, S) + bl, 0) 
+            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecL, S) + bl, 0) 
         if i >= spatial_num:
-            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVec, S) + br, 0) 
+            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecR, S) + br, 0) 
         i = i + 1
     return states
 
@@ -118,73 +130,82 @@ def SYS(t, S):
 if __name__=='__main__':
     ## PARAMTERS TO CHANGE:______________________________________________________________________________
     # set number of spatial discretizations in each ring, must be an even number                       #|
-    spatial_num = 100                                                                               
+    spatial_num = 100                                                                              
                                                                                                        #|
-    # handles offsets in ring connections                                                              #|
+    # handles impulse or change to firing rates.                                                       #|
     b0 = 40                                                                                            #|
     delta_b = 30                                                                                       #|
     br = b0 + delta_b                                                                                  #|   
     bl = b0 - delta_b                                                                                  #|
+                                          
                                                                                                        #| 
     # what time window should the PDE be approximated on                                               #|
-    t_span = [0, 1]                                                                                    #|
+    t_span = [0, 1]     
+    time_density = 100 #number of time snapshots soln is saved at in tspan                             #|
+    s0 = 10*ic_maker_erf(spatial_num)
+    #s0 = ic_maker_enum(spatial_num)
     ## END CHANGABLE PARAMETERS. (Can also edit initial conditions in function ic_maker)_______________#|
 
 
     # define necessary constants, parameters used in solver/plotting
     t_start, t_stop = t_span
-    t = np.linspace(t_start, t_stop, 100)
-    midpoints, intervals = thetaDivider(-np.pi, np.pi, 2*spatial_num, 2*spatial_num)
+    t = np.linspace(t_start, t_stop, time_density)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
     theta_space, time = np.meshgrid(midpoints, t)
-    s0 = ic_maker(spatial_num)
+    theta_space = np.transpose(theta_space)
+    time = np.transpose(time)
 
 
     # Finally call  solver
     # setting dense_output to True computes a continuous solution. Default is false.
     sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
 
-    #print(sol)
-    print(sol.t.shape)
-    print(sol.t)
+    # testing print statements        
+    print(time.shape)
+    print(theta_space.shape)
+    print(sol.y.shape)
+    print(sol.y[0:spatial_num, :].shape)
 
+    print(time)
+    print(theta_space)
+    print(sol.y)
+    print("Slcing now:")
+    
+    # pulls left ring soln
+    print(sol.y[0:spatial_num, :])
+    print("__________")
+    # pulls right ring soln
+    print(sol.y[spatial_num: , :])
+    # end testing print statements
 
-
-
-# SCUFFED PLOTTING BELOW, REWORK REWORK
-
-# create jank plot functions, probably shouldn't do this. 
-def plotfriend_left(sol_start, sol_stop):
-    fig = plt.figure()
+    # plot the left ring
+    fig1 = plt.figure()
     ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, sol[:, sol_start:sol_stop], rstride=1, cstride=1, cmap='viridis') #
-    ax.set_title("Firing Rate vs Time")
+    surf = ax.plot_surface(time, theta_space, sol.y[0:spatial_num, :], rstride=1, cstride=1, cmap='viridis') 
+    ax.set_title("Firing Rate vs Time in Left Ring")
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')
     ax.set_zlabel(r'$s_l$')
     #ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
-    filename = 'LR_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
-    fig.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
+    filename = 'LR_' + str(spatial_num) + '.png'
+    fig1.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node') # only run with this line uncommented if you are Nick
 
 
-def plotfriend_right(sol_start, sol_stop):
-    fig = plt.figure()
+    # then the right
+    fig2 = plt.figure()
     ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, sol[:, sol_start:sol_stop], rstride=1, cstride=1, cmap='viridis') #
-    ax.set_title("Firing Rate vs Time")
+    surf = ax.plot_surface(time, theta_space, sol.y[spatial_num: , :], rstride=1, cstride=1, cmap='viridis') 
+    ax.set_title("Firing Rate vs Time in Right Ring")
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')
     ax.set_zlabel(r'$s_l$')
-    #ax.view_init(30, 180) uncomment to see backside
+    #ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
-    filename = 'RR_' + str(X0[0]) + '_' + str(X0[1]) + '_' + str(X0[2]) + '_' + str(X0[3]) + '.png'
-    fig.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/new_plots') # only run with this line uncommented if you are Nick
+    filename = 'RR_' + str(spatial_num) + '.png'
+    fig2.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node') # only run with this line uncommented if you are Nick
 
-
-
-#plotfriend_left(0, 4)
-#plotfriend_right(4, 8)
 
 
