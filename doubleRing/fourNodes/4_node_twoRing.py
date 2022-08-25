@@ -150,7 +150,7 @@ t = np.linspace(0, stoptime, numpoints)
 sol = odeint(RHS, X0, t, args=(p,), atol=abserr, rtol=relerr) 
 
 print(sol[-1, 0:8])
-
+print(sol.shape)
 # create meshgrids in order to plot
 theta_space, time = np.meshgrid(midpoints, t)
 

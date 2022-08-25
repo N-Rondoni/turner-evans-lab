@@ -70,11 +70,7 @@ midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
 del_theta = intervals[0][-1] - intervals[0][0]
 
 theta_1, theta_2, theta_3, theta_4 = midpoints[0], midpoints[1], midpoints[2], midpoints[3]
-#print(del_theta)
-#print(theta_1)
-#print(theta_2)
-#print(theta_3)
-#print(theta_4)
+
 
 def sys(S):
     b0 = 40
@@ -98,9 +94,19 @@ def sys(S):
 
 init_guess = [0.1, 0.2, 0.1, 0.3, 0.1, 0.2, 0.3, 0.1]
 
-#sys(init_guess)
 fixed_point = fsolve(sys, init_guess)
 print(fixed_point)
+
+# these need to be edited to to take in the final s_i values as arguemnts sl_1 through 4
+# can check that the focing functions equal the sl_i in this way.
+Tau = 0.080
+def fr(theta_step, theta_1, theta_2, theta_3, theta_4, Tau):
+    force_right = np.maximum(theta_step*(1/(2*np.pi))*(wd(theta_1)*sl_1 + ws(theta_1)*sr_1 + wd(theta_2)*sl_2 + ws(theta_2)*sr_2 + wd(theta_3)*sl_3 + ws(theta_3)*sr_3 + wd(theta_4)*sr_4 + ws(theta_4)*sr_4) + br, 0)/Tau
+    return force_right
+
+def fl(theta_step, theta_1, theta_2, theta_3, theta_4, Tau):
+    force_left = np.maximum(theta_step*(1/(2*np.pi))*(ws(theta_1)*sl_1 + wd(theta_1)*sr_1 + ws(theta_2)*sl_2 + wd(theta_2)*sr_2 + ws(theta_3)*sl_3 + wd(theta_3)*sr_3 + ws(theta_4)*sl_4 + wd(theta_4)*sr_4) + bl, 0)/Tau
+    return force_right
 
 
 
