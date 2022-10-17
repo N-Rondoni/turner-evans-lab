@@ -45,9 +45,9 @@ def ws(theta):
     Arguments: 
             Theta: the midpoint of our discretization intervals
     """
-    [J0, J1] = [-60, 80]
+    [J0, J1] = [-60, 30]
     # can change the offset connection points with these angles below
-    phiDeg = 90
+    phiDeg = 89
     psiDeg = 45
     phi = phiDeg*(np.pi)/180
     psi = psiDeg*(np.pi)/180
@@ -64,7 +64,7 @@ def wd(theta):
     """
     [K0, K1] = [-5, 80]
     # can change the offset connection points with these angles below
-    phiDeg = 90
+    phiDeg = 89
     psiDeg = 45
     phi = phiDeg*(np.pi)/180
     psi = psiDeg*(np.pi)/180
@@ -87,7 +87,15 @@ def ic_maker_erf(spatial_discretizations):
     n = 2*spatial_discretizations
     midpoints, intervals = thetaDivider(-np.pi, np.pi, n, n)
     s0 = (2/np.pi)*np.exp(-(midpoints-(np.pi/2))**2)
-    #s0 = midpoints
+    return s0
+
+
+def ic_maker_periodic(spatial_discretizations):
+    n = 2*spatial_discretizations
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_discretizations, spatial_discretizations)
+    midpoints = np.concatenate((midpoints, midpoints))
+    s0 = np.sin(midpoints)
+    s0 = np.maximum(s0, 0)
     return s0
 
 
@@ -120,9 +128,9 @@ def SYS(t, S):
     i = 0
     while i < 2*spatial_num:
         if i < spatial_num:
-            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecL, S) + bl, 0) 
+            states[i] = -S[i] + (np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecL, S) + bl, 0))/Tau 
         if i >= spatial_num:
-            states[i] = -S[i] + np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecR, S) + br, 0) 
+            states[i] = -S[i] + (np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecR, S) + br, 0))/Tau 
         i = i + 1
     return states
 
@@ -130,20 +138,23 @@ def SYS(t, S):
 if __name__=='__main__':
     ## PARAMTERS TO CHANGE:______________________________________________________________________________
     # set number of spatial discretizations in each ring, must be an even number                       #|
-    spatial_num = 100                                                                              
+    spatial_num = 100                                                                          
                                                                                                        #|
     # handles impulse or change to firing rates.                                                       #|
-    b0 = 40                                                                                            #|
-    delta_b = 30                                                                                       #|
+    b0 = -40                                                                                            #|
+    delta_b = 20                                                                                       #|
     br = b0 + delta_b                                                                                  #|   
     bl = b0 - delta_b                                                                                  #|
                                           
+    # time constant Tau
+    Tau = 80
                                                                                                        #| 
     # what time window should the PDE be approximated on                                               #|
-    t_span = [0, 1]     
-    time_density = 100 #number of time snapshots soln is saved at in tspan                             #|
-    s0 = 10*ic_maker_erf(spatial_num)
+    t_span = [0, 5]     
+    time_density = 1000 #number of time snapshots soln is saved at within tspan                        #|
+    #s0 = 10*ic_maker_erf(spatial_num)
     #s0 = ic_maker_enum(spatial_num)
+    s0 = ic_maker_erf(spatial_num)
     ## END CHANGABLE PARAMETERS. (Can also edit initial conditions in function ic_maker)_______________#|
 
 
@@ -160,23 +171,23 @@ if __name__=='__main__':
     # setting dense_output to True computes a continuous solution. Default is false.
     sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
 
-    # testing print statements        
-    print(time.shape)
-    print(theta_space.shape)
-    print(sol.y.shape)
-    print(sol.y[0:spatial_num, :].shape)
+    # testing print statements        ------
+    #print(time.shape)
+    #print(theta_space.shape)
+    #print(sol.y.shape)
+    #print(sol.y[0:spatial_num, :].shape)
 
-    print(time)
-    print(theta_space)
-    print(sol.y)
-    print("Slcing now:")
+    #print(time)
+    #print(theta_space)
+    #print(sol.y)
+    #print("Slcing now:")
     
     # pulls left ring soln
     print(sol.y[0:spatial_num, :])
     print("__________")
     # pulls right ring soln
     print(sol.y[spatial_num: , :])
-    # end testing print statements
+    # end testing print statements       ------
 
     # plot the left ring
     fig1 = plt.figure()
@@ -200,7 +211,7 @@ if __name__=='__main__':
     ax.set_title("Firing Rate vs Time in Right Ring")
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')
-    ax.set_zlabel(r'$s_l$')
+    ax.set_zlabel(r'$s_r$')
     #ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
     filename = 'RR_' + str(spatial_num) + '.png'
