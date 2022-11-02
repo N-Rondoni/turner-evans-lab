@@ -31,10 +31,10 @@ def ws(theta):
     Arguments: 
             Theta: value of theta on the grid.
     """
-    [J0, J1] = [-60, 30]
+    [J0, J1] = [-60, 80]
     # can change the offset connection points with these angles below
-    phiDeg = 89
-    psiDeg = 45
+    phiDeg = 80
+    psiDeg = 50
     phi = phiDeg*(np.pi)/180
     psi = psiDeg*(np.pi)/180
     weightSame = J0 + J1*np.cos(phi - theta - psi)
@@ -50,8 +50,8 @@ def wd(theta):
     """
     [K0, K1] = [-5, 80]
     # can change the offset connection points with these angles below
-    phiDeg = 89
-    psiDeg = 45
+    phiDeg = 80
+    psiDeg = 50
     phi = phiDeg*(np.pi)/180
     psi = psiDeg*(np.pi)/180
     weightDifferent = K0 + K1*np.cos(phi - theta - psi)
@@ -76,7 +76,7 @@ def weight_maker(spatial_discretizations):
     return weightVecL, weightVecR
 
 
-def weight_mx(spatial_num):
+def weight_mx_old(spatial_num):
     thetas = thetaDivider(-np.pi, np.pi, spatial_num)
     n = 2*spatial_num + 2
     weightMatrix = np.zeros((n, n))
@@ -93,15 +93,14 @@ def weight_mx(spatial_num):
     while j < n:
         weightMatrix[j, :] = weightMatrix[0, :]
         j = j+1
-    print(weightMatrix)     
+    #print(weightMatrix)     
     return weightMatrix
     #print("weight mx thetas:")
     #print(thetas)
 
 
-
 ## OR:
-def weight_mx2(spatial_num):
+def weight_mx(spatial_num):
     thetas = thetaDivider(-np.pi, np.pi, spatial_num)
     n = 2*spatial_num + 2
     weightMatrix = np.zeros((n, n))
@@ -109,12 +108,15 @@ def weight_mx2(spatial_num):
     while (i < n):
         j = 0
         while (j < n):
-            weightMatrix[i, j] = thetas[i] - thetas[j]
+            if j < n/2:
+                weightMatrix[i, j] = ws(thetas[i] - thetas[j])
+            if j >= n/2: 
+                weightMatrix[i, j] = wd(thetas[i] - thetas[j])
             j = j+1
         i = i+1
-    print(weightMatrix)
-    weightMatrix = ((2*np.pi)/(spatial_num + 1))*weightMatrix # this could be wrong. should it be n?
-    print(weightMatrix)
+    #print(weightMatrix)
+    weightMatrix = ((2*np.pi)/(spatial_num + 1))*weightMatrix # this could be wrong. 
+    print(weightMatrix)                                      # should divide by 2pi? 
     return weightMatrix
     #
 
@@ -160,17 +162,13 @@ if __name__=='__main__':
     t_start, t_stop = t_span
     t = np.linspace(t_start, t_stop, time_density)
     theta_grid = thetaDivider(-np.pi, np.pi, spatial_num)
+    weight_mx_old(spatial_num)
     weight_mx(spatial_num)
-    weight_mx2(spatial_num)
-    print(theta_grid)
 
 
     theta_space, time = np.meshgrid(theta_grid, t)
     theta_space = np.transpose(theta_space)
     time = np.transpose(time)
-
-
-    
 
 
 
