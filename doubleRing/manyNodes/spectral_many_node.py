@@ -21,8 +21,14 @@ def thetaDivider(thetaStart, thetaStop, n):
     theta_grid = np.concatenate((theta_grid, theta_grid))
     return theta_grid
 
-# create two subintervals comprised of two theta values each. Store as intervals.
-# create an array of the midpoints of the intervals.
+
+def ic_maker_periodic(spatial_discretizations):
+    n = 2*spatial_discretizations + 2
+    thetas = thetaDivider(-np.pi, np.pi, spatial_discretizations)
+    s0 = np.sin(thetas)
+    s0 = np.maximum(s0, 0)
+    return s0
+
 
 def ws(theta):
     """
@@ -76,30 +82,6 @@ def weight_maker(spatial_discretizations):
     return weightVecL, weightVecR
 
 
-def weight_mx_old(spatial_num):
-    thetas = thetaDivider(-np.pi, np.pi, spatial_num)
-    n = 2*spatial_num + 2
-    weightMatrix = np.zeros((n, n))
-    i = 0
-    # fill first row
-    while i < n:
-        if i < n/2:
-            weightMatrix[0, i] = thetas[i]
-        if i >= n/2:
-            weightMatrix[0, i] = thetas[i]
-        i = i+1  
-    # fill other rows with first row. 
-    j = 0
-    while j < n:
-        weightMatrix[j, :] = weightMatrix[0, :]
-        j = j+1
-    #print(weightMatrix)     
-    return weightMatrix
-    #print("weight mx thetas:")
-    #print(thetas)
-
-
-## OR:
 def weight_mx(spatial_num):
     thetas = thetaDivider(-np.pi, np.pi, spatial_num)
     n = 2*spatial_num + 2
@@ -114,37 +96,48 @@ def weight_mx(spatial_num):
                 weightMatrix[i, j] = wd(thetas[i] - thetas[j])
             j = j+1
         i = i+1
-    #print(weightMatrix)
-    weightMatrix = ((2*np.pi)/(spatial_num + 1))*weightMatrix # this could be wrong. 
-    print(weightMatrix)                                      # should divide by 2pi? 
+    weightMatrix = ((1/(2*np.pi))/(spatial_num + 1))*weightMatrix # this could be wrong. 
+    #print(weightMatrix)                                       # divide by n? mult by 2pi? 
     return weightMatrix
-    #
+    
 
 def SYS(t, S):
-    weightVecL, weightVecR = weight_maker(spatial_num)
-    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_num, spatial_num)
-    theta_step = intervals[0][-1] - intervals[0][0]
+    '''
+    spatial_num, an even number, must be defined in main before you can call this function.
+    '''
+    weightMat = weight_mx(spatial_num)
+    thetas = thetaDivider(-np.pi, np.pi, spatial_num)
 
-    # return vector created with while looooop
-    states = np.zeros(2*spatial_num)
-    i = 0
-    while i < 2*spatial_num:
-        if i < spatial_num:
-            states[i] = -S[i] + (np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecL, S) + bl, 0))/Tau 
-        if i >= spatial_num:
-            states[i] = -S[i] + (np.maximum(theta_step*((1/(2*np.pi)))*np.dot(weightVecR, S) + br, 0))/Tau 
-        i = i + 1
+    states = np.zeros(2*spatial_num + 2)
+    id_mat = np.identity(2*spatial_num + 2)
+    sys_mat = (weightMat -  id_mat) #if weight mat depends on random parameters, this will as well. 
+
+    states = np.dot(sys_mat, S)
+
+    #print(states)
+    #print(states.shape)
+
+    # add feedforward/feedbackwards input
+    for i in range(0, spatial_num + 1):
+        states[i] = states[i] + bl
+    for i in range(spatial_num + 1, 2*spatial_num + 2):
+        states[i] = states[i] + br
+
+    states = np.maximum(states, 0)
+    states = states/Tau
+
     return states
+
 
 
 if __name__=='__main__':
     ## PARAMTERS TO CHANGE:______________________________________________________________________________
     # set number of spatial discretizations in each ring, must be an even number                       #|
-    spatial_num = 2                                                                          
+    spatial_num = 50                                                                          
                                                                                                        #|
     # handles impulse or change to firing rates.                                                       #|
-    b0 = -40                                                                                            #|
-    delta_b = 20                                                                                       #|
+    b0 = 40                                                                                            #|
+    delta_b = -8                                                                                       #|
     br = b0 + delta_b                                                                                  #|   
     bl = b0 - delta_b                                                                                  #|
                                           
@@ -154,6 +147,7 @@ if __name__=='__main__':
     # what time window should the PDE be approximated on                                               #|
     t_span = [0, 5]     
     time_density = 1000 #number of time snapshots soln is saved at within tspan                        #|
+    s0 = ic_maker_periodic(spatial_num)
     
     # END CHANGABLE PARAMETERS. (Can also edit initial conditions in function ic_maker)_______________#|
 
@@ -161,8 +155,8 @@ if __name__=='__main__':
     # define necessary constants, parameters used in solver/plotting
     t_start, t_stop = t_span
     t = np.linspace(t_start, t_stop, time_density)
-    theta_grid = thetaDivider(-np.pi, np.pi, spatial_num)
-    weight_mx_old(spatial_num)
+    #theta_grid = thetaDivider(-np.pi, np.pi, spatial_num)
+    theta_grid = np.linspace(-np.pi, np.pi, spatial_num + 1)
     weight_mx(spatial_num)
 
 
@@ -175,7 +169,7 @@ if __name__=='__main__':
     # Finally call  solver
     # setting dense_output to True computes a continuous solution. Default is false.
     
-    #sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
+    sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
 
     # testing print statements        ------
     #print(time.shape)
@@ -189,19 +183,22 @@ if __name__=='__main__':
     #print("Slcing now:")
     
 
-    quit() 
+
 
     # pulls left ring soln
     #print(sol.y[0:spatial_num, :])
     #print("__________")
     # pulls right ring soln
-    print(sol.y[spatial_num: , :])
-    # end testing print statements       ------
+    print(sol.y[spatial_num+1: , :].shape)
+    print(sol.y[0:spatial_num+1, :].shape)
+    print(time.shape)
+    print(theta_space.shape)
+    # end testing print statements       ------ 
 
     # plot the left ring
     fig1 = plt.figure()
     ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, sol.y[0:spatial_num, :], rstride=1, cstride=1, cmap='viridis') 
+    surf = ax.plot_surface(time, theta_space, sol.y[0:spatial_num+1, :], rstride=1, cstride=1, cmap='viridis') 
     ax.set_title("Firing Rate vs Time in Left Ring")
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')
@@ -216,7 +213,7 @@ if __name__=='__main__':
     # then the right
     fig2 = plt.figure()
     ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, sol.y[spatial_num: , :], rstride=1, cstride=1, cmap='viridis') 
+    surf = ax.plot_surface(time, theta_space, sol.y[spatial_num+1: , :], rstride=1, cstride=1, cmap='viridis') 
     ax.set_title("Firing Rate vs Time in Right Ring")
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')

@@ -85,8 +85,10 @@ def ic_maker_enum(spatial_discretizations):
 
 def ic_maker_erf(spatial_discretizations):
     n = 2*spatial_discretizations
-    midpoints, intervals = thetaDivider(-np.pi, np.pi, n, n)
+    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_discretizations, spatial_discretizations)
+    midpoints = np.concatenate((midpoints, midpoints))
     s0 = (2/np.pi)*np.exp(-(midpoints-(np.pi/2))**2)
+    print(s0)
     return s0
 
 
