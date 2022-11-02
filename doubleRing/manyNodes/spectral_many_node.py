@@ -64,24 +64,6 @@ def wd(theta):
     return weightDifferent
 
 
-def weight_maker(spatial_discretizations):
-    n = int(2*spatial_discretizations)
-    
-    midpoints, intervals = thetaDivider(-np.pi, np.pi, spatial_discretizations, spatial_discretizations)
-    # need to loop over the same midpoints for both left and right rings
-    midpoints = np.concatenate((midpoints, midpoints))
-    i = 0
-    while (i < n):
-        if i < n/2:
-            weightVecL[i] = ws(midpoints[i])
-            weightVecR[i] = wd(midpoints[i])
-        if i >= n/2: 
-            weightVecL[i] = wd(midpoints[i])
-            weightVecR[i] = ws(midpoints[i])
-        i = i + 1
-    return weightVecL, weightVecR
-
-
 def weight_mx(spatial_num):
     thetas = thetaDivider(-np.pi, np.pi, spatial_num)
     n = 2*spatial_num + 2
@@ -129,11 +111,36 @@ def SYS(t, S):
     return states
 
 
+def interp_poly_vecs(spatial_num, x):
+    '''
+    returns a matrix, each column of which is g(theta_i)
+    '''
+    #theta = thetaDivider(-np.pi, np.pi, spatial_num)
+    
+    thetas = np.linspace(-np.pi, np.pi, spatial_num + 1)
+
+    g_mat = np.zeros((2*spatial_num + 2, 2*spatial_num + 2))
+    
+    n = spatial_num + 1
+
+    i = 0
+    while i < spatial_num + 1:
+        j = 0
+        while j < spatial_num + 1: #causes divide by zero errors.
+            g_mat[j, i] = (1/n)*np.sin(n *(x[j] - thetas[i])/2)*(1/(np.tan((x[j] - thetas[i])/2)))
+            j = j+1
+        i = i+1
+    
+    print(g_mat)
+    
+    return g_mat
+
+
 
 if __name__=='__main__':
     ## PARAMTERS TO CHANGE:______________________________________________________________________________
     # set number of spatial discretizations in each ring, must be an even number                       #|
-    spatial_num = 50                                                                          
+    spatial_num = 100                                                                          
                                                                                                        #|
     # handles impulse or change to firing rates.                                                       #|
     b0 = 40                                                                                            #|
@@ -165,13 +172,22 @@ if __name__=='__main__':
     time = np.transpose(time)
 
 
-
     # Finally call  solver
     # setting dense_output to True computes a continuous solution. Default is false.
     
     sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
 
-    # testing print statements        ------
+    # sol becomes coeff for interpolating polynomial
+    
+    # lr/rr solution, each column a time instance.
+    lr_sol = sol.y[0:spatial_num+1, :],
+    rr_sol = sol.y[spatial_num+1:, :],
+
+    # finally interpolat
+
+    #interp_poly_vecs(spatial_num, theta_grid)
+
+    # testing print statements        -------------------------------
     #print(time.shape)
     #print(theta_space.shape)
     #print(sol.y.shape)
@@ -181,8 +197,6 @@ if __name__=='__main__':
     #print(theta_space)
     #print(sol.y)
     #print("Slcing now:")
-    
-
 
 
     # pulls left ring soln
@@ -193,7 +207,7 @@ if __name__=='__main__':
     print(sol.y[0:spatial_num+1, :].shape)
     print(time.shape)
     print(theta_space.shape)
-    # end testing print statements       ------ 
+    # end testing print statements       ------------------------------ 
 
     # plot the left ring
     fig1 = plt.figure()
