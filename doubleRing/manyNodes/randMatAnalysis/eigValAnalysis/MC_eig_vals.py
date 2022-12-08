@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from scipy.integrate import solve_ivp
 import os
+import time as soup
+
 
 
 def thetaDivider(thetaStart, thetaStop, n):
@@ -27,6 +29,7 @@ def ic_maker_periodic(spatial_discretizations):
     thetas = thetaDivider(-np.pi, np.pi, spatial_discretizations)
     s0 = np.sin(thetas)
     s0 = np.maximum(s0, 0)
+    #s0[spatial_discretizations+1:-1] = np.flip(s0[spatial_discretizations+1:-1]) # makes right ring IC mirror image
     return s0
 
 
@@ -38,8 +41,13 @@ def ws(theta):
             Theta: value of theta on the grid.
     """
     # want perturbations of the following:
-    #[J0, J1] = [-60, 80]
-    std_dev = 20
+    #[J0, J1] = [-60, 80] # marginal 
+    #[J0, J1] = [60, 80] # divergent
+    #[J0, J1] = [-60, -80] # homogenous
+    
+    # if you randomize here, recursion is too intense, takes too long to finish.
+
+    std_dev = 200
     J0 = np.random.normal(-60, std_dev)
     J1 = np.random.normal(80, std_dev)
 
@@ -61,8 +69,13 @@ def wd(theta):
             Theta: value of theta on the grid
     """
     # want perturbations of the following:
-    #[K0, K1] = [-5, 80]
-    std_dev = 20
+    #[K0, K1] = [-5, 80] # marginal 
+    #[K0, K1] = [100, 80] # divergent
+    #[K0, K1] = [-100, -80] # homogenous
+
+    # if you randomize here, recursion is too intense, takes too long to finish.
+
+    std_dev = 200
     K0 = np.random.normal(-5, std_dev)
     K1 = np.random.normal(80, std_dev)
 
@@ -89,8 +102,10 @@ def weight_mx(spatial_num):
                 weightMatrix[i, j] = wd(thetas[i] - thetas[j])
             j = j+1
         i = i+1
-    weightMatrix = ((1/(2*np.pi))/(spatial_num + 1))*weightMatrix # this could be wrong. 
-    #print(weightMatrix)                                       # divide by n? mult by 2pi? 
+    weightMatrix = (1/(2*np.pi*(spatial_num + 1)))*weightMatrix # this could be wrong. 
+    #weightMatrix = (1/(spatial_num + 1))*weightMatrix # this could be wrong. 
+
+    #print(weightMatrix)
     return weightMatrix
     
 
@@ -105,13 +120,10 @@ def SYS(t, S):
     id_mat = np.identity(2*spatial_num + 2)
     sys_mat = (weightMat -  id_mat) #if weight mat depends on random parameters, this will as well. 
 
-    eVals, eVecs = np.linalg.eig(sys_mat)
-    np.savetxt("eig_vals_rand_mat.dat", eVals)
-
+    #eVals, eVecs = np.linalg.eig(sys_mat)
+    #
     states = np.dot(sys_mat, S)
-
-    #print(states)
-    #print(states.shape)
+     
 
     # add feedforward/feedbackwards input
     for i in range(0, spatial_num + 1):
@@ -121,14 +133,19 @@ def SYS(t, S):
 
     states = np.maximum(states, 0)
     states = states/Tau
+    
+    S = states
 
     return states
 
 
 if __name__=='__main__':
+    startTime = soup.perf_counter()
+    
+
     ## PARAMTERS TO CHANGE:______________________________________________________________________________
     # set number of spatial discretizations in each ring, must be an even number                       #|
-    spatial_num = 50                                                                          
+    spatial_num = 100
                                                                                                        #|
     # handles impulse or change to firing rates.                                                       #|
     b0 = 40                                                                                            #|
@@ -141,90 +158,45 @@ if __name__=='__main__':
                                                                                                        #| 
     # what time window should the PDE be approximated on                                               #|
     t_span = [0, 5]     
-    time_density = 100 #number of time snapshots soln is saved at within tspan                        #|
-    s0 = ic_maker_periodic(spatial_num)
-    
+    time_density = 200 #number of time snapshots soln is saved at within tspan                        #|
+    s0 = ic_maker_periodic(spatial_num) 
     # END CHANGABLE PARAMETERS. (Can also edit initial conditions in function ic_maker)_______________#|
 
-
     # define necessary constants, parameters used in solver/plotting
-    t_start, t_stop = t_span
-    t = np.linspace(t_start, t_stop, time_density)
     #theta_grid = thetaDivider(-np.pi, np.pi, spatial_num)
     theta_grid = np.linspace(-np.pi, np.pi, spatial_num + 1)
-    weight_mx(spatial_num)
 
 
-    theta_space, time = np.meshgrid(theta_grid, t)
-    theta_space = np.transpose(theta_space)
-    time = np.transpose(time)
+        
+    MC_iter = 1000
 
+    max_eig = np.zeros(1)
+    for i in range(0, MC_iter):
+        weightMat = weight_mx(spatial_num)
+        [m, n] = weightMat.shape
+        # m = n for the weight mat. 
+        I = np.eye(int(m))
+        eVals, eVecs = np.linalg.eig(weightMat - I)
+        max_eig = np.append(max_eig, max(eVals, key = abs)) 
 
-    # Finally call  solver
-    # setting dense_output to True computes a continuous solution. Default is false.
+    # remove first entry of zero:
+    max_eig = max_eig[1:]
+    print(len(max_eig))
+    np.save("maximal_eVals_random_matrix", max_eig)
+
+    #print(max_eig)
+    print("________________________________________________________")
+   
+    realPart = np.real(max_eig)
+    pos_counter = np.zeros(len(realPart))
+
+    for i in range(len(realPart)):
+        if realPart[i] >= 0:
+            pos_counter[i] = 1
+    print(np.sum(pos_counter), "out of", MC_iter, "had positive real part of their maximal eigenvalue")
+    print("or as a percentage: ", np.sum(pos_counter)/MC_iter)
     
-    sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
-
-    # sol becomes coeff for interpolating polynomial
+    stopTime = soup.perf_counter()
+    print("Time to complete run:", stopTime - startTime, "s")
     
-    # lr/rr solution, each column a time instance.
-    lr_sol = sol.y[0:spatial_num+1, :],
-    rr_sol = sol.y[spatial_num+1:, :],
-
-    # finally interpolat
-
-    #interp_poly_vecs(spatial_num, theta_grid)
-
-    # testing print statements        -------------------------------
-    #print(time.shape)
-    #print(theta_space.shape)
-    #print(sol.y.shape)
-    #print(sol.y[0:spatial_num, :].shape)
-
-    #print(time)
-    #print(theta_space)
-    #print(sol.y)
-    #print("Slcing now:")
-
-
-    # pulls left ring soln
-    #print(sol.y[0:spatial_num, :])
-    #print("__________")
-    # pulls right ring soln
-    #print(sol.y[spatial_num+1: , :].shape)
-    #print(sol.y[0:spatial_num+1, :].shape)
-    #print(time.shape)
-    #print(theta_space.shape)
-    # end testing print statements       ------------------------------ 
-
-    # plot the left ring
-    fig1 = plt.figure()
-    ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, sol.y[0:spatial_num+1, :], rstride=1, cstride=1, cmap='viridis') 
-    ax.set_title("Firing Rate vs Time in Left Ring")
-    ax.set_xlabel('Time')
-    ax.set_ylabel(r'$\theta$')
-    ax.set_zlabel(r'$s_l$')
-    #ax.view_init(30, 132) #uncomment to see backside
-    plt.colorbar(surf)
-    filename = 'LR_random' + str(spatial_num) + '.png'
-    fig1.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node/UQ') # only run with this line uncommented if you are Nick
-
-
-    # then the right
-    fig2 = plt.figure()
-    ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, sol.y[spatial_num+1: , :], rstride=1, cstride=1, cmap='viridis') 
-    ax.set_title("Firing Rate vs Time in Right Ring")
-    ax.set_xlabel('Time')
-    ax.set_ylabel(r'$\theta$')
-    ax.set_zlabel(r'$s_r$')
-    #ax.view_init(30, 132) #uncomment to see backside
-    plt.colorbar(surf)
-    filename = 'RR_random' + str(spatial_num) + '.png'
-    fig2.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node/UQ') # only run with this line uncommented if you are Nick
-
-
 

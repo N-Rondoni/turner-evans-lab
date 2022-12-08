@@ -178,9 +178,14 @@ if __name__=='__main__':
     lr_solutions = np.zeros((spatial_num+1, time_density)) 
     rr_solutions = np.zeros((spatial_num+1, time_density))
     
-    MC_iter = 1
+    MC_iter = 1000
 
-
+    meanRR = np.load("Expected_Value_RR_MC.npy")
+    meanLR = np.load("Expected_Value_LR_MC.npy")
+    
+    varLR = np.zeros(meanLR.shape)
+    varRR = np.zeros(meanRR.shape)
+    
     # collect a solution at many time steps for each iteration. Compile into lr/rr  solutions. 
     for i in range(0, MC_iter):
         # want perturbations of the following:
@@ -188,11 +193,11 @@ if __name__=='__main__':
         #[J0, J1] = [60, 80] # divergent
         #[J0, J1] = [-60, -80] # homogenous
 
-        std_dev = 200 #200 will be divergent
+        std_dev = 20 #200 will be divergent
         J0 = np.random.normal(-60, std_dev)
         J1 = np.random.normal(80, std_dev)
 
-        std_dev_2 = 200 #200 divergent
+        std_dev_2 = 20 #200 divergent
         K0 = np.random.normal(-5, std_dev_2)
         K1 = np.random.normal(80, std_dev_2)
 
@@ -207,25 +212,30 @@ if __name__=='__main__':
         lr_solutions = lr_solutions + lr_sol
         rr_solutions = rr_solutions + rr_sol
 
+        
+        varLR = varLR + (lr_sol - meanRR)**2
+        varRR = varRR + (rr_sol - meanLR)**2
+
     
+    varLR = np.sqrt((1/MC_iter)*varLR)
+    varRR = np.sqrt((1/MC_iter)*varRR)
+
+    print(varLR.shape)
+    print(lr_solutions.shape)
     lr_solutions = (1/MC_iter)*lr_solutions
     rr_solutions = (1/MC_iter)*rr_solutions 
-    
-    np.save("Expected_Value_LR", lr_solutions)
-    np.save("Expected_Value_RR", rr_solutions)
-
-
+   
     # plot the left ring
     fig1 = plt.figure()
     ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, lr_solutions, rstride=1, cstride=1, cmap='viridis') 
-    ax.set_title("Firing Rate vs Time in Left Ring")
+    surf = ax.plot_surface(time, theta_space, varLR, rstride=1, cstride=1, cmap='viridis') 
+    ax.set_title(r'Variance $\sigma$ vs Time in Left Ring')
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')
-    ax.set_zlabel(r'$s_l$')
-    #ax.view_init(30, 132) #uncomment to see backside
+    ax.set_zlabel(r'$\sigma$')
+    ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
-    filename = 'LR_random' + str(spatial_num) + '.png'
+    filename = 'Var_LR_random' + str(spatial_num) + '.png'
     fig1.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node/UQ') # only run with this line uncommented if you are Nick
 
@@ -233,14 +243,14 @@ if __name__=='__main__':
     # then the right
     fig2 = plt.figure()
     ax = plt.axes(projection='3d')
-    surf = ax.plot_surface(time, theta_space, rr_solutions, rstride=1, cstride=1, cmap='viridis') 
-    ax.set_title("Firing Rate vs Time in Right Ring")
+    surf = ax.plot_surface(time, theta_space, varRR, rstride=1, cstride=1, cmap='viridis') 
+    ax.set_title("Variance vs Time in Right Ring")
     ax.set_xlabel('Time')
     ax.set_ylabel(r'$\theta$')
     ax.set_zlabel(r'$s_r$')
-    #ax.view_init(30, 132) #uncomment to see backside
+    ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
-    filename = 'RR_random' + str(spatial_num) + '.png'
+    filename = 'Var_RR_random' + str(spatial_num) + '.png'
     fig2.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node/UQ') # only run with this line uncommented if you are Nick
 

@@ -42,9 +42,9 @@ def ws(theta):
     #[J0, J1] = [60, 80] # divergent
     #[J0, J1] = [-60, -80] # homogenous
 
-    #std_dev = 200
-    #J0 = np.random.normal(-60, std_dev)
-    #J1 = np.random.normal(80, std_dev)
+    std_dev = 20
+    J0 = np.random.normal(J0, std_dev)
+    J1 = np.random.normal(J1, std_dev)
 
     # can change the offset connection points with these angles below
     phiDeg = 80
@@ -68,9 +68,9 @@ def wd(theta):
     #[K0, K1] = [100, 80] # divergent
     #[K0, K1] = [-100, -80] # homogenous
 
-    #std_dev = 200
-    #K0 = np.random.normal(-5, std_dev)
-    #K1 = np.random.normal(80, std_dev)
+    std_dev = 20
+    K0 = np.random.normal(K0, std_dev)
+    K1 = np.random.normal(K1, std_dev)
 
     # can change the offset connection points with these angles below
     phiDeg = 80
@@ -153,8 +153,8 @@ if __name__=='__main__':
     Tau = 80
                                                                                                        #| 
     # what time window should the PDE be approximated on                                               #|
-    t_span = [0, 10]     
-    time_density = 1000 #number of time snapshots soln is saved at within tspan                        #|
+    t_span = [0, 5]     
+    time_density = 200 #number of time snapshots soln is saved at within tspan                        #|
     s0 = ic_maker_periodic(spatial_num)
     
     # END CHANGABLE PARAMETERS. (Can also edit initial conditions in function ic_maker)_______________#|
@@ -185,11 +185,11 @@ if __name__=='__main__':
     rr_sol = sol.y[spatial_num+1:, :],
 
     # finally interpolate
-
     # fix a moment in time:
     lr_particular = sol.y[0:spatial_num+1, 0]
-    print(lr_particular.shape)
-    print(theta_grid.shape)
+    #print(lr_particular.shape)
+    #print(theta_grid.shape)
+
     # create g_mat, rows are vector g for varying k., theta_grid is the  theta_k 
     g_mat = np.zeros((spatial_num+1, spatial_num+1))
     for i in range(0, spatial_num+1):

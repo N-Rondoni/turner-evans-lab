@@ -37,7 +37,17 @@ def ws(theta):
     Arguments: 
             Theta: value of theta on the grid.
     """
+    #marginal params: 
     [J0, J1] = [-60, 80]
+
+    # divergent params: 
+    #[J0, J1] = [60, 80]
+
+    
+    # homogenous params:
+    #[J0, J1] = [-60, -80]
+
+
     # can change the offset connection points with these angles below
     phiDeg = 80
     psiDeg = 50
@@ -54,7 +64,15 @@ def wd(theta):
     Arguments: 
             Theta: value of theta on the grid
     """
+    # marginal params:
     [K0, K1] = [-5, 80]
+    
+    # divergent params:
+    #[K0, K1] = [100, 80]
+
+
+    # homogenous params: 
+    #[K0, K1] = [-100, -80]
     # can change the offset connection points with these angles below
     phiDeg = 80
     psiDeg = 50
