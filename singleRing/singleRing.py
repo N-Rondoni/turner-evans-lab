@@ -17,6 +17,9 @@ def tuningCurve(x):
 
 
 def weightFunc(x):
+    '''
+        creates outputs for plotting identical to weightFunc2
+    '''
     # params
     b = .35    # amplitude
     k = 3      # period
@@ -26,7 +29,7 @@ def weightFunc(x):
     # define even portion, close to sinc function
     evenOut = np.zeros(len(x))
     for i in range(len(x)):
-        if np.isclose(x[i], 0): #if x[i] == 0:
+        if x[i] == 0:
             evenOut[i] = b - vs    
         else: 
             evenOut[i] = b*np.sin(b*k*np.pi*x[i])/(np.pi*x[i]) - vs
@@ -37,6 +40,84 @@ def weightFunc(x):
     totalOut = evenOut + oddOut
     return evenOut, oddOut, totalOut
 
+
+def weightFunc2(x):
+    '''
+        creates weight functions to be used in filling of weight matrix. Identical values as weightFunc, 
+        but on individual element not list.
+    '''
+    # params
+    b = .35    # amplitude
+    k = 3      # period
+    vs = .1    # vertical shift
+    gamma = -0.063 # used as odd coeff
+
+    # define even portion, close to sinc function
+    if x == 0:
+        evenOut = b - vs    
+    else: 
+        evenOut = b*np.sin(b*k*np.pi*x)/(np.pi*x) - vs
+    # create odd portion, is derivative of even wrt x
+    #oddOut = gamma*((1/x)*(b**2)*k*np.cos(b*k*np.pi*x) - (1/(np.pi * x**2))*b*np.sin(b*k*np.pi*x))
+    #oddOut = (np.pi**2)*(b**2)*x*k*np.cos(b*k*np.pi*x) - (np.pi*b*np.sin(b*k*np.pi*x))*(1/(np.pi*x)**2)
+    oddOut = gamma*np.sin(x)
+    totalOut = evenOut + oddOut
+    return totalOut
+
+def weightMat(x):
+    W = np.zeros((len(x), len(x)))    
+    for i in range(len(x)):
+        for j in range(len(x)):
+                W[i, j] = weightFunc2(x[i] - x[j])
+    return W
+    
+
+def forcingVec(x):
+    f = np.zeros(len(x))
+    for i in range(len(x)):
+        f[i] = tuningCurve(x[i])
+    return f
+
+
+def sys(t, u):
+    '''
+    RHS of system to be used in solver. Parameter tau kept here.
+    '''
+    Tau = 10
+
+    thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
+    
+    W = weightMat(thetaSpace)
+    f = forcingVec(thetaSpace)
+
+    du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
+
+    return du
+
+
+def initialCond(x):
+    IC = np.zeros(len(x))
+    IC[0] = 1
+    for i in range(1, len(x)):
+        IC[i] = 1 #+ IC[i-1]*np.random.rand()
+    return IC
+
+
+## Plotting functions ##  -------------------------------------
+def plot3d(x, y, z):
+    fig1 = plt.figure()
+    ax = plt.axes(projection='3d')
+    surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='viridis') 
+    ax.set_title("Firing Rate vs Time in Single Ring")
+    ax.set_xlabel('Time')
+    ax.set_ylabel(r'$\theta$')
+    ax.set_zlabel(r'$u$')
+    #ax.view_init(30, 132) #uncomment to see backside
+    plt.colorbar(surf)
+    filename = 'SR.png'
+    fig1.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/singleRing') # only run with this line uncommented if you are Nick
+    plt.show()
 
 def plotWeights(x, y1, y2, y3):
     plt.plot(x, y1, '--', linewidth = 1, label = 'Even Component')
@@ -49,17 +130,30 @@ def plotWeights(x, y1, y2, y3):
     title = 'weight_functions.png'
     plt.savefig(title)
     os.system('cp '+ title +  ' /mnt/c/Users/nicho/Pictures/singleRing')
-    plt.show() 
+    #plt.show() 
+
+## End Plotting Functions ## -------------------------------------
 
 
 if __name__=="__main__":
-    x = np.linspace(-np.pi, np.pi, 100)
-    
+    # set number of spatial discretizations
+    N = 50
+
+    # set up theta space
+    x = np.linspace(-np.pi, np.pi, N, endpoint=False)
     y1, y2, y3 = weightFunc(x)
-
+    
+    # plot weight function
     plotWeights(x, y1, y2, y3)
+   
+    # create initial condiitions
+    u0 = initialCond(x)
 
-    print(tuningCurve(1))
-    print("soup")
+    sol = solve_ivp(sys, [0, 10], u0)
+   
+    timeGrid, thetaGrid = np.meshgrid(sol.t, x)
 
+    #print(((sol.y).shape, timeGrid.shape, thetaGrid.shape))
+
+    plot3d(thetaGrid, timeGrid, sol.y)
 
