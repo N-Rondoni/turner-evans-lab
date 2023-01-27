@@ -8,10 +8,10 @@ from scipy.integrate import solve_ivp
 import os
 
 def tuningCurve(x):
-    A = 2.53
-    k = 8.08 
-    B = 34.8/np.exp(k)
-    x0 = np.pi/2
+    A = 1.72
+    k = 5.29 #same k as in weight function or different? 
+    B = 94.8/np.exp(k)
+    x0 = 0
     out = A + B*np.exp(k*np.cos(x - x0))
     return out  
 
@@ -76,21 +76,12 @@ def weightMat(x):
     return W
     
 
-def sigma(s):
-    a = 6.34
-    beta = 0.8
-    b = 10
-    c = 0.5
-   
-    #a = 1
-    #beta = 1
-    #b = 1.1
-    #c = 1
-    
-    out = np.zeros(len(s))
-    for i in range(len(s)):
-        out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
-    return out
+def forcingVec(x):
+    f = np.zeros(len(x))
+    for i in range(len(x)):
+        f[i] = tuningCurve(x[i])
+    return f
+
 
 def sys(t, u):
     '''
@@ -101,8 +92,7 @@ def sys(t, u):
     thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
     
     W = weightMat(thetaSpace)
-    #f = forcingVec(thetaSpace)
-    f = sigma(u)
+    f = forcingVec(thetaSpace)
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
     #du = np.maximum(du, 0)
@@ -110,19 +100,13 @@ def sys(t, u):
     return du
 
 
-def initialCondRand(x):
+def initialCond(x):
     IC = np.zeros(len(x))
     IC[0] = 1
     for i in range(1, len(x)):
         IC[i] = 1 #+ IC[i-1]*np.random.rand()
     return IC
 
-
-def initialCondBump(x):
-    IC = np.zeros(len(x))
-    for i in range(len(x)):
-        IC[i] = tuningCurve(x[i])
-    return IC
 
 
 
@@ -171,9 +155,9 @@ if __name__=="__main__":
     plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
-    u0 = initialCondRand(x)
+    u0 = initialCond(x)
 
-    sol = solve_ivp(sys, [0, 800], u0)
+    sol = solve_ivp(sys, [0, 100], u0)
    
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
 
