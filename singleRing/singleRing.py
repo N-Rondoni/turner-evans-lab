@@ -105,7 +105,7 @@ def sys(t, u):
     f = sigma(u)
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
-    #du = np.maximum(du, 0)
+   # du = np.maximum(du, 0)
     
     return du
 
@@ -160,7 +160,7 @@ def plotWeights(x, y1, y2, y3):
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 50
+    N = 100
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
@@ -173,11 +173,20 @@ if __name__=="__main__":
     # create initial condiitions
     u0 = initialCondRand(x)
 
-    sol = solve_ivp(sys, [0, 800], u0)
+    sol = solve_ivp(sys, [0, 400], u0)
    
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
+    
+    # Recall sol is energy levels, not actual firing rates. 
+    # step through each time slice, rectify accordingly (pass thru sig) 
+  
+    (m, n) = sol.y.shape
+    firingRate = np.zeros((m, n))
+    for i in range(n):
+        firingRate[:, i] = sigma(sol.y[:, i])
 
-    #print(((sol.y).shape, timeGrid.shape, thetaGrid.shape))
+     
+    
 
-    plot3d(thetaGrid, timeGrid, sol.y)
+    plot3d(thetaGrid, timeGrid, firingRate)
 
