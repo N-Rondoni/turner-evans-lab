@@ -101,12 +101,12 @@ def sys(t, u):
     thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
     
     W = weightMat(thetaSpace)
-    #f = forcingVec(thetaSpace)
+    #f = forcingVec(thetaSpace) creates constant forcing
     f = sigma(u)
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
-   # du = np.maximum(du, 0)
     
+    #du[-1] = du[0] This does not make the solution periodic. 
     return du
 
 
@@ -114,7 +114,7 @@ def initialCondRand(x):
     IC = np.zeros(len(x))
     IC[0] = 1
     for i in range(1, len(x)):
-        IC[i] = 1 #+ IC[i-1]*np.random.rand()
+        IC[i] = IC[i-1]/i + np.random.rand()
     return IC
 
 
@@ -160,7 +160,7 @@ def plotWeights(x, y1, y2, y3):
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 100
+    N = 50
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
@@ -173,7 +173,7 @@ if __name__=="__main__":
     # create initial condiitions
     u0 = initialCondRand(x)
 
-    sol = solve_ivp(sys, [0, 400], u0)
+    sol = solve_ivp(sys, [0, 800], u0)
    
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
     
@@ -186,7 +186,5 @@ if __name__=="__main__":
         firingRate[:, i] = sigma(sol.y[:, i])
 
      
-    
-
     plot3d(thetaGrid, timeGrid, firingRate)
 

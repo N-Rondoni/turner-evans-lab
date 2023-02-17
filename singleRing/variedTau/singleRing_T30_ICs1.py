@@ -8,10 +8,10 @@ from scipy.integrate import solve_ivp
 import os
 
 def tuningCurve(x):
-    A = 1.72
-    k = 5.29 #same k as in weight function or different? 
-    B = 94.8/np.exp(k)
-    x0 = -np.pi/2
+    A = 2.53
+    k = 8.08 
+    B = 34.8/np.exp(k)
+    x0 = np.pi/2
     out = A + B*np.exp(k*np.cos(x - x0))
     return out  
 
@@ -76,37 +76,53 @@ def weightMat(x):
     return W
     
 
-def forcingVec(x):
-    f = np.zeros(len(x))
-    for i in range(len(x)):
-        f[i] = tuningCurve(x[i])
-    return f
-
+def sigma(s):
+    a = 6.34
+    beta = 0.8
+    b = 10
+    c = 0.5
+   
+    #a = 1
+    #beta = 1
+    #b = 1.1
+    #c = 1
+    
+    out = np.zeros(len(s))
+    for i in range(len(s)):
+        out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
+    return out
 
 def sys(t, u):
     '''
     RHS of system to be used in solver. Parameter tau kept here.
     '''
-    Tau = 10
+    Tau = 30
 
     thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
     
     W = weightMat(thetaSpace)
-    f = forcingVec(thetaSpace)
+    #f = forcingVec(thetaSpace) creates constant forcing
+    f = sigma(u)
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
-    #du = np.maximum(du, 0)
     
+    #du[-1] = du[0] This does not make the solution periodic. 
     return du
 
 
-def initialCond(x):
+def initialCondRand(x):
     IC = np.zeros(len(x))
     IC[0] = 1
     for i in range(1, len(x)):
-        IC[i] = 1 #+ IC[i-1]*np.random.rand()
+        IC[i] = IC[i-1]#/i + np.random.rand()
     return IC
 
+
+def initialCondBump(x):
+    IC = np.zeros(len(x))
+    for i in range(len(x)):
+        IC[i] = tuningCurve(x[i])
+    return IC
 
 
 
@@ -155,13 +171,20 @@ if __name__=="__main__":
     plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
-    u0 = initialCond(x)
+    u0 = initialCondRand(x)
 
-    sol = solve_ivp(sys, [0, 100], u0)
+    sol = solve_ivp(sys, [0, 800], u0)
    
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
+    
+    # Recall sol is energy levels, not actual firing rates. 
+    # step through each time slice, rectify accordingly (pass thru sig) 
+  
+    (m, n) = sol.y.shape
+    firingRate = np.zeros((m, n))
+    for i in range(n):
+        firingRate[:, i] = sigma(sol.y[:, i])
 
-    #print(((sol.y).shape, timeGrid.shape, thetaGrid.shape))
-
-    plot3d(thetaGrid, timeGrid, sol.y)
+     
+    plot3d(thetaGrid, timeGrid, firingRate)
 

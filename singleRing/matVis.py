@@ -8,10 +8,10 @@ from scipy.integrate import solve_ivp
 import os
 
 def tuningCurve(x):
-    A = 1.72
-    k = 5.29 #same k as in weight function or different? 
-    B = 94.8/np.exp(k)
-    x0 = -np.pi/2
+    A = 2.53
+    k = 8.08 
+    B = 34.8/np.exp(k)
+    x0 = 0
     out = A + B*np.exp(k*np.cos(x - x0))
     return out  
 
@@ -72,16 +72,39 @@ def weightMat(x):
     W = np.zeros((len(x), len(x)))    
     for i in range(len(x)):
         for j in range(len(x)):
-                W[i, j] = weightFunc2(x[i] - x[j])
+            #if ((x[i] - x[j]) >= np.pi): #doesn't work for negatives
+            #    temp = (x[i] - x[j]) % (2*np.pi)
+                #print(temp)
+            #else: 
+            #    temp = x[i] - x[j]
+            #W[i,j] = temp
+            #######################################################
+            if ((x[i] - x[j]) >= np.pi):
+                temp = x[i] - x[j] - 2*np.pi
+            elif (x[i] - x[j] <= -np.pi):
+                temp = x[i] - x[j] + 2*np.pi
+            else:
+                temp = x[i] - x[j] 
+            W[i, j] = weightFunc2(temp)
+            #W[i, j] = temp
     return W
     
 
-def forcingVec(x):
-    f = np.zeros(len(x))
-    for i in range(len(x)):
-        f[i] = tuningCurve(x[i])
-    return f
-
+def sigma(s):
+    a = 6.34
+    beta = 0.8
+    b = 10
+    c = 0.5
+   
+    #a = 1
+    #beta = 1
+    #b = 1.1
+    #c = 1
+    
+    out = np.zeros(len(s))
+    for i in range(len(s)):
+        out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
+    return out
 
 def sys(t, u):
     '''
@@ -92,21 +115,32 @@ def sys(t, u):
     thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
     
     W = weightMat(thetaSpace)
-    f = forcingVec(thetaSpace)
+    #f = forcingVec(thetaSpace) creates constant forcing
+    f = sigma(u)
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
-    #du = np.maximum(du, 0)
-    
+   
+    #print(du[-1], du[0]) #This does not make the solution periodic. i
+
+    #du[0] = du[-1]
+    #du[1] = du[-2]
+    #du[-1] = du[0]
     return du
 
 
-def initialCond(x):
+def initialCondRand(x):
     IC = np.zeros(len(x))
     IC[0] = 1
     for i in range(1, len(x)):
-        IC[i] = 1 #+ IC[i-1]*np.random.rand()
+        IC[i] = IC[i-1]#/i + np.random.rand()
     return IC
 
+
+def initialCondBump(x):
+    IC = np.zeros(len(x))
+    for i in range(len(x)):
+        IC[i] = tuningCurve(x[i])
+    return IC
 
 
 
@@ -148,20 +182,33 @@ if __name__=="__main__":
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
-    y1, y2, y3 = weightFunc(x)
-
+    #y1, y2, y3 = weightFunc(x)
+    #print(x)
 
     # plot weight function
-    plotWeights(x, y1, y2, y3)
+    #plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
-    u0 = initialCond(x)
+    u0 = initialCondRand(x)
 
-    sol = solve_ivp(sys, [0, 100], u0)
-   
+    sol = solve_ivp(sys, [0, 1200], u0)
+  
+
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
+    
+    # Recall sol is energy levels, not actual firing rates. 
+    # step through each time slice, rectify accordingly (pass thru sig) 
+  
+    (m, n) = sol.y.shape
+    firingRate = np.zeros((m, n))
+    for i in range(n):
+        firingRate[:, i] = sigma(sol.y[:, i])
 
-    #print(((sol.y).shape, timeGrid.shape, thetaGrid.shape))
+     
+    plot3d(thetaGrid, timeGrid, firingRate)
+    #plot3d(thetaGrid, timeGrid, sol.y)
 
-    plot3d(thetaGrid, timeGrid, sol.y)
-
+    w = weightMat(x)
+    print(w)
+    plt.matshow(w)
+    plt.show()
