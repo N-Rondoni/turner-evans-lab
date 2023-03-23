@@ -44,7 +44,7 @@ def weightFunc(x):
     return evenOut, oddOut, totalOut
 
 
-def weightFunc2(x):
+def weightFunc2(x, t):
     '''
         creates weight functions to be used in filling of weight matrix. Identical values as weightFunc, 
         but on individual element not list.
@@ -65,10 +65,13 @@ def weightFunc2(x):
         oddOut = gamma*((1/x)*(b**2)*k*np.cos(b*k*np.pi*x) - (1/(np.pi * x**2))*b*np.sin(b*k*np.pi*x))
     # Another odd option
     #oddOut = gamma*np.sin(x)
+    if t > 400:
+        oddOut = 0
+
     totalOut = evenOut + oddOut
     return totalOut
 
-def weightMat(x):
+def weightMat(x, t):
     W = np.zeros((len(x), len(x)))    
     for i in range(len(x)):
         for j in range(len(x)):
@@ -85,7 +88,7 @@ def weightMat(x):
                 temp = x[i] - x[j] + 2*np.pi
             else:
                 temp = x[i] - x[j] 
-            W[i, j] = weightFunc2(temp)
+            W[i, j] = weightFunc2(temp, t)
     return W
     
 
@@ -113,11 +116,9 @@ def sys(t, u):
 
     thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
     
-    W = weightMat(thetaSpace)
+    W = weightMat(thetaSpace, t)
     #f = forcingVec(thetaSpace) creates constant forcing
     f = sigma(u)
-    
-    
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
     return du
@@ -138,12 +139,6 @@ def initialCondBump(x):
     return IC
 
 
-def initialCondFlat(x):
-    IC = np.zeros(len(x))
-    for i in range(len(x)):
-        IC[i] = 1
-    return IC
-
 
 ## Plotting functions ##  -------------------------------------
 def plot3d(x, y, z):
@@ -156,6 +151,9 @@ def plot3d(x, y, z):
     ax.set_zlabel(r'$\sigma(u)$ (Hz)')
     #ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
+    filename = 'SR.png'
+    fig1.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/singleRing') # only run with this line uncommented if you are Nick
     plt.show()
 
 def plotWeights(x, y1, y2, y3):
@@ -166,12 +164,14 @@ def plotWeights(x, y1, y2, y3):
     plt.xlabel(r'$\theta$', fontsize = 14)
     plt.ylabel(r'$w(\theta, t)$', fontsize = 14)
     plt.legend()
-    plt.show() 
+    title = 'weight_functions.png'
+    plt.savefig(title)
+    os.system('cp '+ title +  ' /mnt/c/Users/nicho/Pictures/singleRing')
+    #plt.show() 
 
-def matVis(A):
-    plt.matshow(A)
+def matVis(w):
+    plt.matshow(w)
     plt.show()
-   
 ## End Plotting Functions ## -------------------------------------
 
 
@@ -188,8 +188,7 @@ if __name__=="__main__":
     #plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
-    #u0 = initialCondRand(x)
-    u0 = initialCondFlat(x)
+    u0 = initialCondRand(x)
 
     sol = solve_ivp(sys, [0, 1200], u0)
   
@@ -207,13 +206,14 @@ if __name__=="__main__":
      
     plot3d(thetaGrid, timeGrid, firingRate)
     #plot3d(thetaGrid, timeGrid, sol.y)
-    
-    # save firing rate for fluoresc.pyy
-    np.save("CRE/FiringRates", firingRate)
-    np.save("CRE/timesEvaled", sol.t)
 
-#### Examining the weight matrix
-    w = weightMat(x)
-    #matVis(w)
-    eVals, eVecs = np.linalg.eig(w)
-    np.save("eigVals/eVals.npy", eVals)
+
+    # Exploration of eigenvalues of weight matrix
+    w1 = weightMat(x, 1)
+    w2 = weightMat(x, 401)
+    #matVis(w1)
+    #matVis(w2)
+    eVals1, eVecs1 = np.linalg.eig(w1)
+    eVals2, eVecs2 = np.linalg.eig(w2)
+    
+    np.save("eigVals/eVals_oddOff.npy", eVals2)   #matVis(x)

@@ -11,7 +11,7 @@ def tuningCurve(x):
     A = 2.53
     k = 8.08 
     B = 34.8/np.exp(k)
-    x0 = 0
+    x0 = np.pi/2
     out = A + B*np.exp(k*np.cos(x - x0))
     return out  
 
@@ -72,21 +72,7 @@ def weightMat(x):
     W = np.zeros((len(x), len(x)))    
     for i in range(len(x)):
         for j in range(len(x)):
-            #if ((x[i] - x[j]) >= np.pi): #doesn't work for negatives
-            #    temp = (x[i] - x[j]) % (2*np.pi)
-                #print(temp)
-            #else: 
-            #    temp = x[i] - x[j]
-            #W[i,j] = temp
-            #######################################################
-            if ((x[i] - x[j]) >= np.pi):
-                temp = x[i] - x[j] - 2*np.pi
-            elif (x[i] - x[j] <= -np.pi):
-                temp = x[i] - x[j] + 2*np.pi
-            else:
-                temp = x[i] - x[j] 
-            W[i, j] = weightFunc2(temp)
-            #W[i, j] = temp
+                W[i, j] = weightFunc2(x[i] - x[j])
     return W
     
 
@@ -119,12 +105,7 @@ def sys(t, u):
     f = sigma(u)
 
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
-   
-    #print(du[-1], du[0]) #This does not make the solution periodic. i
-
-    #du[0] = du[-1]
-    #du[1] = du[-2]
-    #du[-1] = du[0]
+    
     return du
 
 
@@ -132,7 +113,7 @@ def initialCondRand(x):
     IC = np.zeros(len(x))
     IC[0] = 1
     for i in range(1, len(x)):
-        IC[i] = IC[i-1]#/i + np.random.rand()
+        IC[i] = IC[i-1]/i + np.random.rand()
     return IC
 
 
@@ -182,18 +163,17 @@ if __name__=="__main__":
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
-    #y1, y2, y3 = weightFunc(x)
-    #print(x)
+    y1, y2, y3 = weightFunc(x)
+
 
     # plot weight function
-    #plotWeights(x, y1, y2, y3)
+    plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
     u0 = initialCondRand(x)
 
-    sol = solve_ivp(sys, [0, 1200], u0)
-  
-
+    sol = solve_ivp(sys, [0, 800], u0)
+   
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
     
     # Recall sol is energy levels, not actual firing rates. 
@@ -206,9 +186,4 @@ if __name__=="__main__":
 
      
     plot3d(thetaGrid, timeGrid, firingRate)
-    #plot3d(thetaGrid, timeGrid, sol.y)
-
-    w = weightMat(x)
-    print(w)
-    plt.matshow(w)
-    plt.show()
+   
