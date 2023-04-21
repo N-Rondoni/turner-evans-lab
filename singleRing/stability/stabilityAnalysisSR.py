@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from scipy.integrate import solve_ivp
+from scipy.optimize import fsolve
 import os
 
 def tuningCurve(x):
@@ -105,6 +106,7 @@ def sigma(s):
         out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
     return out
 
+
 def linRect(s):
     out = np.zeros(len(s))
     for i in range(len(s)):
@@ -115,7 +117,7 @@ def linRect(s):
     return out
 
 
-def sys(t, u):
+def sys(u):
     '''
     RHS of system to be used in solver. Parameter tau kept here.
     '''
@@ -125,10 +127,10 @@ def sys(t, u):
     
     W = weightMat(thetaSpace)
     #f = forcingVec(thetaSpace) creates constant forcing
-    f = sigma(u) #creates the travelling bump
-    #f = linRect(u) is not good
+    f = sigma(u)
     
     
+
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
     return du
 
@@ -201,26 +203,26 @@ if __name__=="__main__":
     #u0 = initialCondRand(x)
     u0 = initialCondFlat(x)
 
-    sol = solve_ivp(sys, [0, 1200], u0)
+    sol = fsolve(sys, 5*u0)
   
+    print(sigma(sol))
+    
+    #print(infodict.fvec)
 
-    timeGrid, thetaGrid = np.meshgrid(sol.t, x)
+    print(sys(sigma(sol)))
+
+    #timeGrid, thetaGrid = np.meshgrid(sol.t, x)
     
     # Recall sol is energy levels, not actual firing rates. 
     # step through each time slice, rectify accordingly (pass thru sig) 
   
-    (m, n) = sol.y.shape
-    firingRate = np.zeros((m, n))
-    for i in range(n):
-        firingRate[:, i] = linRect(sol.y[:, i])
+    #(m, n) = sol.y.shape
+    #firingRate = np.zeros((m, n))
+    #for i in range(n):
+    #    firingRate[:, i] = linRect(sol.y[:, i])
 
      
-    plot3d(thetaGrid, timeGrid, firingRate)
-    
-
-
-
-
+    #plot3d(thetaGrid, timeGrid, firingRate)
     #plot3d(thetaGrid, timeGrid, sol.y)
     
     # save firing rate for fluoresc.py
