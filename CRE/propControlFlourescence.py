@@ -6,6 +6,7 @@ from scipy.integrate import solve_ivp
 import scipy.io
 import os
 
+
 def firing(t):
     ##
     # Idealized firing rate of the neuron in question. Returns hz at given time.
@@ -17,6 +18,7 @@ def firing(t):
 sVec = np.array([0])
 
 def CRN(t, A):
+    global sVec
     """
     Defines the differential equations for a coupled chemical reaction network.
     
@@ -33,21 +35,11 @@ def CRN(t, A):
     # define chemical master equation 
     # this is the RHS of the system     
     
+    # interpolate because data doesn't have values for all times used by solver.
     CI_MeasTemp = np.interp(t, timeVec, CI_Meas)
-    k = -1
-    s = k*(z - CI_MeasTemp)
+    k = 1
+    s = -k*(z - CI_MeasTemp)
     sVec = np.append(sVec, s)
-    print(sVec)
-    #print(s)
-    
-    # I really wanted to avoid doing this but I have scope issues. WARNING: JANK TO FOLLOW. 
-    #filename = "sVec"
-    #f = open(filename, 'a')
-    #f.write(str(s))
-    #f.close
-    #np.save(filename, s)
-    # end jank
-
 
     du = [alpha*s - gamma*x + kr*z - kf*y*x,
         kr*z - kf*y*x, 
@@ -118,7 +110,7 @@ if __name__=="__main__":
 
     plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
 
-    print(sVec)
+    print(sVec.shape)
 
     #sTemp = np.load("sVec.npy")
     #print(sTemp)
