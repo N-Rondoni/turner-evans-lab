@@ -15,10 +15,17 @@ def firing(t):
     rate = peakHz*np.exp(-5*(t-.1)**2) 
     return rate
 
-sVec = np.array([0])
+
+#lenS = 100000 #357039 # found by running with append instead of preallocated len. Printed len of appended ver.
+              # note this is overkill. Trim extra zeros off later. 
+#sVec = np.zeros(lenS-1) # preallocated ver feels like 10x faster. 
+#tVec = np.zeros(lenS-1)
+#i = 0
 
 def CRN(t, A):
     global sVec
+    global tVec
+    global i
     """
     Defines the differential equations for a coupled chemical reaction network.
     
@@ -39,7 +46,6 @@ def CRN(t, A):
     CI_MeasTemp = np.interp(t, timeVec, CI_Meas)
     k = 1
     s = -k*(z - CI_MeasTemp)
-    sVec = np.append(sVec, s)
 
     du = [alpha*s - gamma*x + kr*z - kf*y*x,
         kr*z - kf*y*x, 
@@ -56,9 +62,8 @@ def plotThreeLines(x, y1, y2, y3):
     plt.legend()
     plt.show() 
 
-def plotS(x):
-    sTemp = np.load("sVec.npy")
-    plt.plot(x, sTemp, '--', linewidth = 1, label = r'$Ca^{2+}$')
+def plotS(x, y):
+    plt.plot(x, y, label = r'$S$')
     plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
@@ -78,12 +83,15 @@ if __name__=="__main__":
     CI_Meas = data[1, :] #pull a particular row so we're looking at a single neuron. 
     CI_Meas = 100*CI_Meas
 
+
     # compute total time, (imaging was done at 11.4hz), create vec of time samples timeVec
     # timeVec used within solver to compute interpolated value of S at a particular time. np.interp(t, timeVec, CI_Meas)
     imRate = 11.4
     tEnd = n*(1/imRate)
     timeVec = np.linspace(0, tEnd, n)
 
+
+    #plotS(timeVec, CI_Meas)
 
     # define initial conditions
     X = 0 #Ca^{2+}
@@ -93,8 +101,8 @@ if __name__=="__main__":
     # define constants/reaction parameters, kr << kf
     kf = 100
     kr = 50
-    alpha = 100  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
-    gamma = 1000
+    alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
+    gamma = 100
 
     # pack up parameters and ICs
     p = [kf, kr, alpha, gamma]
@@ -107,10 +115,27 @@ if __name__=="__main__":
     #os.system("rm sVec.npy")
     
     sol = solve_ivp(CRN, tsolve, u0, t_eval=timeVec)
-
+    
+    k = 1 # need to flip otherwis output is negative. Maybe flip differenc? 
+    sVec = -k*(sol.y[2,:] - CI_Meas)
+    
     plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
 
-    print(sVec.shape)
+    #print(sVec.shape)
+    #print(tVec.shape)
+    #sVec = np.trim_zeros(sVec, 'b')
+    #tVec = np.trim_zeros(tVec, 'b')
+    #print(sVec.shape)
+    #print(tVec.shape)
+
+    #print(tVec[-1])
+    #print(tEnd)
+
+    #np.save("tVec", tVec)
+    #np.save("sVec", sVec)
+    
+    plotS(sol.t, sVec)
+
 
     #sTemp = np.load("sVec.npy")
     #print(sTemp)
