@@ -34,13 +34,14 @@ def CRN(t, A):
                 p = [kf, kr, alpha, gamma]
     """
     x, y, z = A
-    kf, kr, alpha, gamma = p
+    kf, kr, alpha, gamma, beta = p
     
     # define chemical master equation 
     # this is the RHS of the system     
     
     # interpolate because data doesn't have values for all times used by solver.
-    CI_MeasTemp = np.interp(t, timeVec, CI_Meas)
+    #print(len(timeVec), len(CI_Meas))
+    CI_MeasTemp = np.interp(t, timeVec, CI_Meas[:len(timeVec)])
     
     # Keep current error to compute eProp, and der for next pass. 
     # proportional portion
@@ -60,7 +61,7 @@ def CRN(t, A):
     
     #sVec = np.append(sVec, s)
 
-    du = [alpha*s - gamma*x + kr*z - kf*y*x,
+    du = [alpha*s - gamma*x + kr*z - kf*y*x, # + beta
         kr*z - kf*y*x, 
         kf*y*x - kr*z] 
 
@@ -70,6 +71,7 @@ def CRN(t, A):
     return du
 
 def plotThreeLines(x, y1, y2, y3):
+    plt.figure(1)
     plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
     plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
     plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$')
@@ -77,7 +79,7 @@ def plotThreeLines(x, y1, y2, y3):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
 
 def plotS(x, y):
     plt.plot(x, y, label = r'$S$')
@@ -85,15 +87,16 @@ def plotS(x, y):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
 
 def plotErr(x, y):
+    plt.figure(2)
     plt.plot(x, y, label = r'$Error$')
     plt.title('Dynamics of Error as a function of time', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Error', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
 
 
 
@@ -114,7 +117,10 @@ if __name__=="__main__":
     imRate = 11.4
     tEnd = n*(1/imRate)
     timeVec = np.linspace(0, tEnd, n)
-
+    # short time testing uncomment below ###
+    tEnd = 5
+    timeVec = np.linspace(0, tEnd, 100)
+    #########################################
 
     #plotS(timeVec, CI_Meas)
 
@@ -128,23 +134,23 @@ if __name__=="__main__":
     kr = 50
     alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
     gamma = 100
-    beta = 1
+    beta = 4000
 
     # pack up parameters and ICs
-    p = [kf, kr, alpha, gamma]
+    p = [kf, kr, alpha, gamma, beta]
     u0 = [X, Y, Z]
 
     # set up time for solver
     tsolve = [0, tEnd]
-    print(len(timeVec))
+    #print(len(timeVec))
 
     sol = solve_ivp(CRN, tsolve, u0, t_eval=timeVec)
-    print("solution hsa beeen generated. ")
+    print("solution has been generated. ")
     
     plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
    
     # prop portion
-    eCurrent = (sol.y[2,:] - CI_Meas) 
+    eCurrent = (sol.y[2,:] - CI_Meas[:len(timeVec)]) 
         
     # derivative portion
     # compute t vec
@@ -176,11 +182,44 @@ if __name__=="__main__":
     # have one additional time point than sVec values, due to derivative.
     subt = np.zeros(len(sol.t) -1)
     subt = sol.t[:-1]
+   
+    # Additional Plotting, this is the guts of plotS
+    #plotS(subt, sVec)
+    plt.figure(3)
+    plt.plot(subt, sVec, label = r'$S$')
+    plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'S (hz)', fontsize = 14)
+    plt.legend()
+    #plt.show() 
     
-    plotS(subt, sVec)
+
+    #plotS(subt[:200], sVec[:200])
+    plt.figure(4)
+    plt.plot(subt[:200], sVec[:200], label = r'$S$')
+    plt.title('Subset of time, Dynamics of S backsolved from CRN', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'S (hz)', fontsize = 14)
+    plt.legend()
+    #plt.show() 
+    
+ 
+    #plotS(subt, derVec)
+    plt.figure(5)
+    plt.plot(subt, derVec, label = r'$S$')
+    plt.title('Dynamics of derivative of Error', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'$\dot{e}$', fontsize = 14)
+    plt.legend()
+    plt.show() 
+    
+    #plt.figure(6)
 
 
-    plotS(subt[:200], sVec[:200])
+
+
+
+
 
     #print(sol.y)
     #print(tEvals.shape, S.shape)

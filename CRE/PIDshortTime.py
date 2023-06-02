@@ -34,13 +34,14 @@ def CRN(t, A):
                 p = [kf, kr, alpha, gamma]
     """
     x, y, z = A
-    kf, kr, alpha, gamma = p
-    
+    #kf, kr, alpha, gamma, beta = p
+    kf, kr, alpha, gamma, kProp, kDer, kInt, beta = p
+
     # define chemical master equation 
     # this is the RHS of the system     
     
     # interpolate because data doesn't have values for all times used by solver.
-    CI_MeasTemp = np.interp(t, timeVec, CI_Meas)
+    CI_MeasTemp = np.interp(t, timeVec, CI_Meas[:len(timeVec)])
     
     # Keep current error to compute eProp, and der for next pass. 
     # proportional portion
@@ -50,17 +51,17 @@ def CRN(t, A):
     if t == tPrev:
         eDer = 0
     else:
-        eDer = (eCurrent - ePrev)/(t - tPrev) #+1 it work
+        eDer = (eCurrent - ePrev)/(t - tPrev) 
 
-    kProp = 1
-    kDer = 1
-    kInt = 1
+    #kProp = 1
+    #kDer = 1
+    #kInt = 1
 
     s = -kProp*eCurrent + -kDer*eDer
     
     #sVec = np.append(sVec, s)
 
-    du = [alpha*s - gamma*x + kr*z - kf*y*x,
+    du = [alpha*s - gamma*x + kr*z - kf*y*x, # + beta
         kr*z - kf*y*x, 
         kf*y*x - kr*z] 
 
@@ -70,6 +71,7 @@ def CRN(t, A):
     return du
 
 def plotThreeLines(x, y1, y2, y3):
+    plt.figure(1)
     plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
     plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
     plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$')
@@ -77,7 +79,7 @@ def plotThreeLines(x, y1, y2, y3):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
 
 def plotS(x, y):
     plt.plot(x, y, label = r'$S$')
@@ -85,15 +87,16 @@ def plotS(x, y):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
 
 def plotErr(x, y):
+    plt.figure(2)
     plt.plot(x, y, label = r'$Error$')
     plt.title('Dynamics of Error as a function of time', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Error', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
 
 
 
@@ -114,9 +117,13 @@ if __name__=="__main__":
     imRate = 11.4
     tEnd = n*(1/imRate)
     timeVec = np.linspace(0, tEnd, n)
-
-
-    #plotS(timeVec, CI_Meas)
+    # short time testing uncomment below ###
+    #tEnd = .5
+    #nDatPoints = 50
+    #timeVec = np.linspace(0, tEnd, nDatPoints)
+    #########################################
+     # set up time for solver
+    tsolve = [0, tEnd]
 
     # define initial conditions
     X = 0 #Ca^{2+}
@@ -125,29 +132,33 @@ if __name__=="__main__":
 
     # define constants/reaction parameters, kr << kf
     kf = 100
-    kr = 50
+    kr = 5
     alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
     gamma = 100
-    beta = 1
-
+    beta = 4000
+    # gain coeff
+    kProp = 1
+    kDer = 1
+    kInt = 1
+    
     # pack up parameters and ICs
-    p = [kf, kr, alpha, gamma]
+    p = [kf, kr, alpha, gamma, kProp, kDer, kInt, beta]
     u0 = [X, Y, Z]
 
-    # set up time for solver
-    tsolve = [0, tEnd]
-    print(len(timeVec))
-
+    # Actually solve
+    print("Solver has started")
     sol = solve_ivp(CRN, tsolve, u0, t_eval=timeVec)
-    print("solution hsa beeen generated. ")
+    print("solution has been generated. ")
     
     plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
    
+
+    # Post Processing for Plotting
     # prop portion
-    eCurrent = (sol.y[2,:] - CI_Meas) 
+    eCurrent = (sol.y[2,:] - CI_Meas[:len(timeVec)]) 
         
     # derivative portion
-    # compute t vec
+    # compute t vec (many delta t values)
     tVec = np.zeros(len(sol.t) - 1)
     for i in range(len(tVec)):
         tVec[i] = sol.t[i+1] - sol.t[i] 
@@ -162,10 +173,7 @@ if __name__=="__main__":
             derVec[i] = (eCurrent[i+1] - eCurrent[i])/tVec[i]
     
 
-    # gain coeff
-    kProp = 1
-    kDer = 1
-    
+   
     # these fuckers (sol.t and derVec) are differen length. (743) vs (742).
     plotErr(sol.t, -1*eCurrent) 
 
@@ -176,12 +184,41 @@ if __name__=="__main__":
     # have one additional time point than sVec values, due to derivative.
     subt = np.zeros(len(sol.t) -1)
     subt = sol.t[:-1]
+   
+    # Additional Plotting, this is the guts of plotS
+    #plotS(subt, sVec)
+    plt.figure(3)
+    plt.plot(subt, sVec, label = r'$S$')
+    plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'S (hz)', fontsize = 14)
+    plt.legend()
+    #plt.show() 
     
-    plotS(subt, sVec)
+
+    #plotS(subt[:200], sVec[:200])
+    plt.figure(4)
+    plt.plot(subt[:200], sVec[:200], label = r'$S$')
+    plt.title('Subset of time, Dynamics of S backsolved from CRN', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'S (hz)', fontsize = 14)
+    plt.legend()
+    #plt.show() 
+    
+ 
+    #plotS(subt, derVec)
+    plt.figure(5)
+    plt.plot(subt, derVec, label = r'$S$')
+    plt.title('Dynamics of derivative of Error', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'$\dot{e}$', fontsize = 14)
+    plt.legend()
+    plt.show() 
+    
 
 
-    plotS(subt[:200], sVec[:200])
-
+    #plt.figure(6)
+    #plt.figure(6)
     #print(sol.y)
     #print(tEvals.shape, S.shape)
     #print(tEvals)
