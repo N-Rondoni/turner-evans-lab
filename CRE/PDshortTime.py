@@ -118,8 +118,8 @@ if __name__=="__main__":
     tEnd = n*(1/imRate)
     timeVec = np.linspace(0, tEnd, n)
     # short time testing uncomment below ###
-    tEnd = 5
-    timeVec = np.linspace(0, tEnd, 100)
+    #tEnd = 5
+    #timeVec = np.linspace(0, tEnd, 100)
     #########################################
 
     #plotS(timeVec, CI_Meas)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import scipy.io
 import os
-
+import time
 
 def firing(t):
     ##
@@ -17,12 +17,13 @@ def firing(t):
 
 tPrev = 0
 ePrev = 0
+eSum = 0
 #sVec = np.array([0])
 
 def CRN(t, A):
     global tPrev
     global ePrev
-   # global sVec
+    global eSum
     """
     Defines the differential equations for a coupled chemical reaction network.
     
@@ -53,14 +54,12 @@ def CRN(t, A):
     else:
         eDer = (eCurrent - ePrev)/(t - tPrev) 
 
-    #kProp = 1
-    #kDer = 1
-    #kInt = 1
-
-    s = -kProp*eCurrent + -kDer*eDer
+    # integral portion (approximatd with Reimann type sum)
+    eSum = eSum + (t - tPrev)*eCurrent
     
-    #sVec = np.append(sVec, s)
+    s = -kProp*eCurrent + -kDer*eDer + -kInt*eSum 
 
+    #print(t, s)
     du = [alpha*s - gamma*x + kr*z - kf*y*x, # + beta
         kr*z - kf*y*x, 
         kf*y*x - kr*z] 
@@ -118,21 +117,21 @@ if __name__=="__main__":
     tEnd = n*(1/imRate)
     timeVec = np.linspace(0, tEnd, n)
     # short time testing uncomment below ###
-    #tEnd = .5
-    #nDatPoints = 50
+    #tEnd = .1
+    #nDatPoints = 5
     #timeVec = np.linspace(0, tEnd, nDatPoints)
     #########################################
-     # set up time for solver
+    # set up time for solver
     tsolve = [0, tEnd]
 
     # define initial conditions
     X = 0 #Ca^{2+}
-    Y = 100 #CI
+    Y = 200 #CI
     Z = 0   #CI^*
 
     # define constants/reaction parameters, kr << kf
-    kf = 100
-    kr = 5
+    kf = 100 #x10ing this and below seems to reeally lengthen runtime. 
+    kr = 5 #was 50 to create plots from meeting 5_25 /// 
     alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
     gamma = 100
     beta = 4000
@@ -146,9 +145,12 @@ if __name__=="__main__":
     u0 = [X, Y, Z]
 
     # Actually solve
-    print("Solver has started")
+    start = time.time()
+    print("Solver has started at", start)
     sol = solve_ivp(CRN, tsolve, u0, t_eval=timeVec)
-    print("solution has been generated. ")
+    end = time.time()
+    print("solution has been generated, finishing at", end)
+    print("Total runtime", end - start)
     
     plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
    
@@ -171,15 +173,21 @@ if __name__=="__main__":
             derVec = 0 
         else: 
             derVec[i] = (eCurrent[i+1] - eCurrent[i])/tVec[i]
-    
-
    
     # these fuckers (sol.t and derVec) are differen length. (743) vs (742).
     plotErr(sol.t, -1*eCurrent) 
 
     eCurrentSub = eCurrent[:-1]
 
-    sVec = -kProp*eCurrentSub + -kDer*derVec
+    # compute approximate integral of error 
+    eSumTemp = tVec*eCurrentSub # this is not a sum of error???????
+    
+    eSum = np.zeros(len(eSumTemp))
+    for i in range(len(eSumTemp)):
+        eSum[i] = np.sum(eSumTemp[0:i])
+
+
+    sVec = -kProp*eCurrentSub + -kDer*derVec + -kInt*eSum
 
     # have one additional time point than sVec values, due to derivative.
     subt = np.zeros(len(sol.t) -1)
@@ -213,8 +221,23 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$\dot{e}$', fontsize = 14)
     plt.legend()
-    plt.show() 
+    #plt.show() 
     
+    # debugging plots
+    #print("len subt:", len(subt))
+    #print("len CI_meas:", len(CI_Meas))
+    #print("len of CI_sim:", len(sol.y[2,:]))
+    
+    plt.figure(6)
+    plt.plot(sol.t, CI_Meas, label=r'$CI^{*}_{Meas}$')
+    plt.plot(sol.t, sol.y[2,:], label=r'$CI^{*}_{Sim}$')
+    plt.title(r'$CI^{*}$, simulated and measured')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'CI', fontsize = 14)
+    plt.legend()
+
+
+    plt.show()
 
 
     #plt.figure(6)
