@@ -78,7 +78,11 @@ def plotThreeLines(x, y1, y2, y3):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
-    #plt.show() 
+    filename = 'RR_' + str(spatial_num) + '.png'
+    fig2.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node') # only run with this line uncommented if you are Nick
+
+   #plt.show() 
 
 def plotS(x, y):
     plt.plot(x, y, label = r'$S$')
@@ -106,6 +110,10 @@ if __name__=="__main__":
     mat = scipy.io.loadmat(file_path)
     data = mat['flyDat'] #had to figure out why data class is flyDat from print(mat). No clue. 
     m,n = data.shape
+
+    # step through rows: hope to see bump travel across all 
+    for i in range(m):
+        print(data[i, :])
 
 
     CI_Meas = data[5, :] #pull a particular row so we're looking at a single neuron. Testing figures created with 1.  
