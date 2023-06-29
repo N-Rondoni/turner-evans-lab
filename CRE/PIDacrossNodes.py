@@ -78,18 +78,9 @@ def plotThreeLines(x, y1, y2, y3):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
-    filename = 'RR_' + str(spatial_num) + '.png'
-    fig2.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/doubleRing/many_node') # only run with this line uncommented if you are Nick
-
-   #plt.show() 
-
-def plotS(x, y):
-    plt.plot(x, y, label = r'$S$')
-    plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'S (hz)', fontsize = 14)
-    plt.legend()
+    filename = 'CRE_fig1_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
     #plt.show() 
 
 def plotErr(x, y):
@@ -99,7 +90,10 @@ def plotErr(x, y):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Error', fontsize = 14)
     plt.legend()
-    #plt.show() 
+    filename = 'CRE_fig2_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
 
 
 
@@ -112,8 +106,9 @@ if __name__=="__main__":
     m,n = data.shape
 
     # step through rows: hope to see bump travel across all 
-    for i in range(m):
-        print(data[i, :])
+    for i in range(2):  #m):
+        print(i)
+    
 
 
     CI_Meas = data[5, :] #pull a particular row so we're looking at a single neuron. Testing figures created with 1.  
@@ -159,9 +154,9 @@ if __name__=="__main__":
     sol = solve_ivp(CRN, tsolve, u0, t_eval=timeVec)
     end = time.time()
     #print("solution has been generated, finishing at", end)
-    print("Total runtime", end - start)
+    print('Total runtime for row ', str(i), end - start)
     
-    plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
+    #plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
    
 
     # Post Processing for Plotting
@@ -184,7 +179,7 @@ if __name__=="__main__":
             derVec[i] = (eCurrent[i+1] - eCurrent[i])/tVec[i]
    
     # these fuckers (sol.t and derVec) are differen length. (743) vs (742).
-    plotErr(sol.t, -1*eCurrent) 
+    #plotErr(sol.t, -1*eCurrent) 
 
     eCurrentSub = eCurrent[:-1]
 
@@ -202,27 +197,58 @@ if __name__=="__main__":
     subt = np.zeros(len(sol.t) -1)
     subt = sol.t[:-1]
    
+
+    # plot 3 values solved for in CRE
+    plt.figure(1)
+    y1, = sol.y[0,:]
+    y2 = sol.y[1,:] 
+    y3 = sol.y[2,:]
+    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
+    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
+    plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$')
+    plt.title('Dynamics Derived from CRN', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'Concentration', fontsize = 14)
+    plt.legend()
+    filename = 'CRE_fig1_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+    # plot error across time
+    plt.figure(2)
+    plt.plot(sol.t, -1*eCuurrent, label = r'$Error$')
+    plt.title('Dynamics of Error as a function of time', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'Error', fontsize = 14)
+    plt.legend()
+    filename = 'CRE_fig2_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
     # Additional Plotting, this is the guts of plotS
-    #plotS(subt, sVec)
+    #plot firing rate
     plt.figure(3)
     plt.plot(subt, sVec, label = r'$S$')
     plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
     plt.legend()
-    #plt.show() 
+    filename = 'CRE_fig3_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
     
-
-    #plotS(subt[:200], sVec[:200])
+    #plot subset of firing rate
     plt.figure(4)
     plt.plot(subt[:200], sVec[:200], label = r'$S$')
     plt.title('Subset of time, Dynamics of S backsolved from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
     plt.legend()
-    #plt.show() 
+    filename = 'CRE_fig4_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
     
- 
     #plotS(subt, derVec)
     plt.figure(5)
     plt.plot(subt, derVec, label = r'$S$')
@@ -230,14 +256,13 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$\dot{e}$', fontsize = 14)
     plt.legend()
-    #plt.show() 
+    filename = 'CRE_fig5_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-   
-    # debugging plots
-    #print("len subt:", len(subt))
-    #print("len CI_meas:", len(CI_Meas))
-    #print("len of CI_sim:", len(sol.y[2,:]))
-    
+   #plt.show() 
+
+    # plot measured vs simulated CI^*
     plt.figure(6)
     plt.plot(sol.t, CI_Meas, label=r'$CI^{*}_{Meas}$')
     plt.plot(sol.t, sol.y[2,:], label=r'$CI^{*}_{Sim}$')
@@ -245,16 +270,23 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
     plt.legend()
+    filename = 'CRE_fig6_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-     #plot Ca^{2+} seperately as concentrations are too low to see when plotted together
+    #plot Ca^{2+} seperately as concentrations are too low to see when plotted together
     plt.figure(7)
     plt.plot(sol.t, sol.y[0,:])#, label = r'$Ca^{2+}$')
     plt.title(r'Dynamics of $Ca^{2+}$')
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$Ca^{2+}$', fontsize = 14)
-    
+    filename = 'CRE_fig7_' + str(i) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-    plt.show()
+
+
+    #plt.show()
 
 
     #np.save("temp.dat", sol.y[0,:])
