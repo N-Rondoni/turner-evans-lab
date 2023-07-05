@@ -197,7 +197,7 @@ if __name__=="__main__":
     # Additional Plotting, this is the guts of plotS
     #plotS(subt, sVec)
     plt.figure(3)
-    plt.plot(subt, sVec, label = r'$S$')
+    plt.plot(subt[300:-1], sVec[300:-1], label = r'$S$')
     plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
@@ -207,7 +207,7 @@ if __name__=="__main__":
 
     #plotS(subt[:200], sVec[:200])
     plt.figure(4)
-    plt.plot(subt[:200], sVec[:200], label = r'$S$')
+    plt.plot(subt[:300], sVec[:300], label = r'$S$')
     plt.title('Subset of time, Dynamics of S backsolved from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)

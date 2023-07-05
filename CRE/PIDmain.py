@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import scipy.io
 import os
+import sys
 import time
 
 def firing(t):
@@ -100,18 +101,16 @@ def plotErr(x, y):
 if __name__=="__main__":
     # Load in Dan's fly data from janelia. Using cond{1}.allFlyData{1}.Strip{2}.RROIavMax
     #file_path = '~/turner-evans-lab/CRE/flymat.mat'
-    file_path = 'flymat.mat'
+    file_path = 'data/flymat.mat'
     mat = scipy.io.loadmat(file_path)
     data = mat['flyDat'] #had to figure out why data class is flyDat from print(mat). No clue. 
     m,n = data.shape
 
-    # step through rows: hope to see bump travel across all 
-    for i in range(2):  #m):
-        print(i)
-    
+    # step through rows: hope to see bump travel across all. rows are stepped through with driver. 
+    row = int(sys.argv[1])
+    print(row)
 
-
-    CI_Meas = data[5, :] #pull a particular row so we're looking at a single neuron. Testing figures created with 1.  
+    CI_Meas = data[row, :] #pull a particular row so we're looking at a single neuron. Testing figures created with 1.  
     CI_Meas = 50*CI_Meas
 
 
@@ -154,7 +153,7 @@ if __name__=="__main__":
     sol = solve_ivp(CRN, tsolve, u0, t_eval=timeVec)
     end = time.time()
     #print("solution has been generated, finishing at", end)
-    print('Total runtime for row ', str(i), end - start)
+    print('Total runtime for row ', str(row), end - start)
     
     #plotThreeLines(sol.t, sol.y[0,:], sol.y[1,:], sol.y[2,:])
    
@@ -193,6 +192,9 @@ if __name__=="__main__":
 
     sVec = -kProp*eCurrentSub + -kDer*derVec + -kInt*eSum
 
+    # shift sVec upwards
+    sVec = sVec + 40
+
     # have one additional time point than sVec values, due to derivative.
     subt = np.zeros(len(sol.t) -1)
     subt = sol.t[:-1]
@@ -200,28 +202,28 @@ if __name__=="__main__":
 
     # plot 3 values solved for in CRE
     plt.figure(1)
-    y1, = sol.y[0,:]
+    y1 = sol.y[0,:]
     y2 = sol.y[1,:] 
     y3 = sol.y[2,:]
-    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
-    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
-    plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$')
+    plt.plot(sol.t, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
+    plt.plot(sol.t, y2, '--', linewidth = 1, label = r'$CI$')
+    plt.plot(sol.t, y3, linewidth = 2, label = r'$CI^{*}$')
     plt.title('Dynamics Derived from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig1_' + str(i) + '.png'
+    filename = 'CRE_fig1_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
     # plot error across time
     plt.figure(2)
-    plt.plot(sol.t, -1*eCuurrent, label = r'$Error$')
+    plt.plot(sol.t, -1*eCurrent, label = r'$Error$')
     plt.title('Dynamics of Error as a function of time', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Error', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig2_' + str(i) + '.png'
+    filename = 'CRE_fig2_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
@@ -234,7 +236,7 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig3_' + str(i) + '.png'
+    filename = 'CRE_fig3_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
     
@@ -245,7 +247,7 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'S (hz)', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig4_' + str(i) + '.png'
+    filename = 'CRE_fig4_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
     
@@ -256,7 +258,7 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$\dot{e}$', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig5_' + str(i) + '.png'
+    filename = 'CRE_fig5_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
@@ -270,7 +272,7 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig6_' + str(i) + '.png'
+    filename = 'CRE_fig6_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
@@ -280,11 +282,14 @@ if __name__=="__main__":
     plt.title(r'Dynamics of $Ca^{2+}$')
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$Ca^{2+}$', fontsize = 14)
-    filename = 'CRE_fig7_' + str(i) + '.png'
+    filename = 'CRE_fig7_' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-
+    np.save('data/s_node_' + str(row), sVec)
+    np.save('data/t_node_' + str(row), sol.t)
+    np.save('data/sol_node_' + str(row), sol.y)
+    #plt.
 
     #plt.show()
 
