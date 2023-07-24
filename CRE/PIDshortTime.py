@@ -102,7 +102,7 @@ def plotErr(x, y):
 if __name__=="__main__":
     # Load in Dan's fly data from janelia. Using cond{1}.allFlyData{1}.Strip{2}.RROIavMax
     #file_path = '~/turner-evans-lab/CRE/flymat.mat'
-    file_path = 'flymat.mat'
+    file_path = 'data/flymat.mat'
     mat = scipy.io.loadmat(file_path)
     data = mat['flyDat'] #had to figure out why data class is flyDat from print(mat). No clue. 
     m,n = data.shape
