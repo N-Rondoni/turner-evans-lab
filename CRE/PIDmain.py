@@ -37,7 +37,7 @@ def CRN(t, A):
     """
     x, y, z = A
     #kf, kr, alpha, gamma, beta = p
-    kf, kr, alpha, gamma, kProp, kDer, kInt, beta = p
+    kf, kr, alpha, gamma, kProp, kDer, kInt = p
 
     # define chemical master equation 
     # this is the RHS of the system     
@@ -129,22 +129,21 @@ if __name__=="__main__":
 
     # define initial conditions
     X = 0 #Ca^{2+}
-    Y = 100 #CI
-    Z = 0   #CI^*
+    Y = 50 #CI
+    Z = 50  #CI^* #was previously 0, real data readouts start with some concentration.
 
     # define constants/reaction parameters, kr << kf
-    kf = 100 #x10ing this and below seems to reeally lengthen runtime. 
-    kr = 5 #was 50 to create plots from meeting 5_25 /// 
+    kf = 10#kf = 7.6 #kf = 100 #x10ing this and below seems to reeally lengthen runtime. 
+    kr = 1 #kr = 7.6*148#kr = 5 #was 50 to create plots from meeting 5_25 /// 
     alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
     gamma = 100
-    beta = 4000
     # gain coeff
     kProp = 1
     kDer = 1
     kInt = 1
     
     # pack up parameters and ICs
-    p = [kf, kr, alpha, gamma, kProp, kDer, kInt, beta]
+    p = [kf, kr, alpha, gamma, kProp, kDer, kInt]
     u0 = [X, Y, Z]
 
     # Actually solve

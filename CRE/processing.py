@@ -77,7 +77,8 @@ plt.colorbar()
 
 # plot firing rates as a heatmap
 plt.figure(5)
-fig = plt.imshow(firingRates[:, 150:] - 40, aspect='auto', vmin=-2, vmax = 10)
+fig = plt.imshow(firingRates, aspect='auto', vmin=-2, vmax = 12)
+print(np.median(firingRates))
 #plt.title(r"Heatmap of Log $S(\theta, t)$", fontsize = 20)
 plt.title(r"$S(\theta, t)$ vs Time", fontsize = 20)
 plt.xlabel(r'Steps of $\Delta t$', fontsize =16)
@@ -154,7 +155,7 @@ for i in range(0, 9):
 plt.figure(10)
 for i in range(1, 9):
     #plt.plot(subt, np.log(firingRates[i, :]), alpha=0.5, label = 'node '+ str(i))
-    plt.plot(subt[150:], firingRates[i, 150:] -40, alpha=0.5, label = 'node '+ str(i))
+    plt.plot(subt[150:], firingRates[i, 150:], alpha=0.5, label = 'node '+ str(i))
     plt.legend(loc = 'best')
     plt.title(r'Plot of $S(\theta, t)$ vs Time', fontsize = 20)
     #plt.title(r'Semilog Plot of $S(\theta, t)$ vs Time', fontsize = 20)
@@ -187,7 +188,29 @@ plt.ylabel(r'Node', fontsize = 14)
 plt.imshow(CIsim, aspect='auto')
 plt.colorbar()
 
+# testing plo, node 1 has different IC
+plt.figure(13)
+plt.plot(subt, firingRates[1, :], label = "node 1")
+plt.plot(subt, firingRates[2,:], label = "node 2")
+plt.title(r'$S(\theta, t)$, Few Nodes', fontsize = 20)
+#plt.title(r'Log Plot of $S(\theta, t)$ vs Time')
+plt.xlabel(r'$t$ (s)', fontsize = 16)
+plt.ylabel(r'$S(\theta, t)$', fontsize = 16)
+plt.legend(loc = 'best')
+#
 
+
+# testing if K_d (diffusion coeff) lines up with expected JRGECO val of 148
+temp = []
+for i in range(0, m):
+    sol = np.load('data/sol_node_' + str(i) + '.npy')
+    kdSim = sol[1, :] * sol[0,:] / (sol[2,:]+.000000001) # CI*Ca^{2+}/CI^*
+    temp = np.append(temp, np.mean(kdSim))
+
+print(temp)
+
+
+plt.show()
 
 # heatmap of CI_sim + S
 #plt.figure(12)
@@ -208,7 +231,7 @@ plt.colorbar()
 #plt.plot(firingRates[1, :)]
 
 
-plt.show()
+#plt.show()
 
 # testing print statements
 #print(Ffr[1, 1:10])

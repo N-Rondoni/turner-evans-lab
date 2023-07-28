@@ -13,5 +13,4 @@ for i in range(m):
 
 os.system('rm *.png')
 
-
-
+os.system('python3 processing.py')
