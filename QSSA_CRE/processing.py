@@ -13,9 +13,9 @@ m,n = data.shape
 
 firingRates = np.zeros((m, n-1)) #sub 1 because of the way sVec created
 for i in range(m):
-    firingRates[i, :] = np.load('data/s_node_' + str(i) + '.npy')
+    firingRates[i, :] = np.load('data/QSSA_s_node_' + str(i) + '.npy')
 
-firingRates = firingRates - 40
+#firingRates = firingRates - 40
 
 
 
@@ -77,7 +77,7 @@ plt.colorbar()
 
 # plot firing rates as a heatmap
 plt.figure(5)
-fig = plt.imshow(firingRates, aspect='auto', vmin=-2, vmax = 12)
+fig = plt.imshow(firingRates, aspect='auto')#, vmin=-2, vmax = 12)
 print(np.median(firingRates))
 #plt.title(r"Heatmap of Log $S(\theta, t)$", fontsize = 20)
 plt.title(r"$S(\theta, t)$ vs Time", fontsize = 20)
@@ -136,7 +136,7 @@ plt.legend(loc= 'best')
 
 plt.figure(9)
 tVals = np.zeros(n)
-tVals = np.load('data/t_node_' + str(0) + '.npy')
+tVals = np.load('data/QSSA_t_node_' + str(0) + '.npy')
 subt = np.zeros(len(tVals) - 1)
 subt = tVals[:-1]
 # the above are needed elsewhere, not necessarily for this plot. 
@@ -180,8 +180,8 @@ for i in range(0, 8):
 plt.figure(12)
 CIsim = np.zeros((m, n))
 for i in range(0, m):
-    sol = np.load('data/sol_node_' + str(i) + '.npy')
-    CIsim[i, :] = sol[2, :] / 45 #normalized
+    sol = np.load('data/QSSA_sol_node_' + str(i) + '.npy')
+    CIsim[i, :] = sol[0, :]  #normalized
 plt.title(r"Normalized Matrix Visualization of $CI^*_{sim}$", fontsize = 18)
 plt.xlabel(r'Steps of $\Delta t$', fontsize =14)
 plt.ylabel(r'Node', fontsize = 14)
@@ -201,13 +201,13 @@ plt.legend(loc = 'best')
 
 
 # testing if K_d (diffusion coeff) lines up with expected JRGECO val of 148
-temp = []
-for i in range(0, m):
-    sol = np.load('data/sol_node_' + str(i) + '.npy')
-    kdSim = sol[1, :] * sol[0,:] / (sol[2,:]+.000000001) # CI*Ca^{2+}/CI^*
-    temp = np.append(temp, np.mean(kdSim))
+#temp = []
+#for i in range(0, m):
+#    sol = np.load('data/QSSA_sol_node_' + str(i) + '.npy')
+#    kdSim = sol[1, :] * sol[0,:] / (sol[2,:]+.000000001) # CI*Ca^{2+}/CI^*
+#    temp = np.append(temp, np.mean(kdSim))
 
-print(temp)
+#print(temp)
 
 
 plt.show()
