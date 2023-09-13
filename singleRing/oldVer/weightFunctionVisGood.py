@@ -32,12 +32,14 @@ def weightFunc(x):
     oddOut = np.zeros(len(x))
     for i in range(len(x)):
         if x[i] == 0:
-            evenOut[i] = (b**2)*k - vs
+            evenOut[i] = b - vs
             oddOut[i] = 0
         else: 
             evenOut[i] = b*np.sin(b*k*np.pi*x[i])/(np.pi*x[i]) - vs
             oddOut[i] = gamma*((1/x[i])*(b**2)*k*np.cos(b*k*np.pi*x[i]) - (1/(np.pi * x[i]**2))*b*np.sin(b*k*np.pi*x[i]))
     # create odd portion, is derivative of even wrt x  
+    #oddOut = gamma*np.sin(x)
+
     totalOut = evenOut + oddOut
     return evenOut, oddOut, totalOut
 
@@ -56,12 +58,13 @@ def weightFunc2(x):
 
     # define even/odd portions, close to sinc function and its derivative respectively
     if x == 0:
-        evenOut = (b**2)*k - vs
+        evenOut = b - vs
         oddOut =  0
     else: 
         evenOut = b*np.sin(b*k*np.pi*x)/(np.pi*x) - vs
         oddOut = gamma*((1/x)*(b**2)*k*np.cos(b*k*np.pi*x) - (1/(np.pi * x**2))*b*np.sin(b*k*np.pi*x))
-
+    # Another odd option
+    #oddOut = gamma*np.sin(x)
     totalOut = evenOut + oddOut
     return totalOut
 
@@ -69,6 +72,13 @@ def weightMat(x):
     W = np.zeros((len(x), len(x)))    
     for i in range(len(x)):
         for j in range(len(x)):
+            #if ((x[i] - x[j]) >= np.pi): #doesn't work for negatives
+            #    temp = (x[i] - x[j]) % (2*np.pi)
+                #print(temp)
+            #else: 
+            #    temp = x[i] - x[j]
+            #W[i,j] = temp
+            #######################################################
             if ((x[i] - x[j]) >= np.pi):
                 temp = x[i] - x[j] - 2*np.pi
             elif (x[i] - x[j] <= -np.pi):
@@ -97,8 +107,7 @@ def sigma(s):
     return out
 
 def linRect(s):
-    # here is a more modern correction function. Graphs are the same essentially
-    #     if soln is passed in at end. Cannot be used in sys tho. 
+    # here is a more modern correction function. Graphs are the same essentially.
     out = np.zeros(len(s))
     for i in range(len(s)):
         if s[i] > 0:
@@ -165,9 +174,9 @@ def plotWeights(x, y1, y2, y3):
     plt.plot(x, y1, '--', linewidth = 1, label = 'Even Component')
     plt.plot(x, y2, '--', linewidth = 1, label = 'Odd Component')
     plt.plot(x, y3, linewidth = 2, label = 'Total (Odd + Even)')
-    plt.title('Weight Function', fontsize = 18)
+    plt.title('Weight Distributions', fontsize = 18)
     plt.xlabel(r'$\theta$', fontsize = 14)
-    plt.ylabel(r'$w(\theta)$', fontsize = 14)
+    plt.ylabel(r'$w(\theta, t)$', fontsize = 14)
     plt.legend()
     plt.show() 
 
@@ -181,10 +190,10 @@ def matVis(A):
 if __name__=="__main__":
     # set number of spatial discretizations
     N = 48
+    N = 100
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
-
     y1, y2, y3 = weightFunc(x)
     #print(x)
 
@@ -200,7 +209,7 @@ if __name__=="__main__":
 
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
     
-    # Recall sol is energy, not actual firing rates. 
+    # Recall sol is energy levels, not actual firing rates. 
     # step through each time slice, rectify accordingly (pass thru sig) 
   
     (m, n) = sol.y.shape
@@ -213,10 +222,18 @@ if __name__=="__main__":
     plot3d(thetaGrid, timeGrid, firingRate)
     
 
+
+
+
     #plot3d(thetaGrid, timeGrid, sol.y)
     
-    #w = weightMat(x)
-    #matVis(w)
-    #print(w)
+    # save firing rate for fluoresc.py
+    #np.save("CRE/FiringRates", firingRate)
+    #np.save("CRE/timesEvaled", sol.t)
+
+#### Examining the weight matrix
+    w = weightMat(x)
+    matVis(w)
+    print(w)
     #eVals, eVecs = np.linalg.eig(w)
     #np.save("eigVals/eVals.npy", eVals)

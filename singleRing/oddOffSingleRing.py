@@ -108,6 +108,17 @@ def sigma(s):
         out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
     return out
 
+def linRect(s):
+    # here is a more modern correction function. Graphs are the same essentially.
+    out = np.zeros(len(s))
+    for i in range(len(s)):
+        if s[i] > 0:
+            out[i] = s[i]
+        else:
+            out[i] = 0 
+    return out
+
+
 def sys(t, u):
     '''
     RHS of system to be used in solver. Parameter tau kept here.
@@ -145,8 +156,8 @@ def plot3d(x, y, z):
     fig1 = plt.figure()
     ax = plt.axes(projection='3d')
     surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='viridis') 
-    ax.set_title("Firing Rate vs Time in Single Ring")
-    ax.set_ylabel('Time')
+    ax.set_title("Firing Rate vs Time in Single Ring", fontsize = 18)
+    ax.set_ylabel('Time (ms)')
     ax.set_xlabel(r'$\theta$')
     ax.set_zlabel(r'$\sigma(u)$ (Hz)')
     #ax.view_init(30, 132) #uncomment to see backside
@@ -181,7 +192,7 @@ if __name__=="__main__":
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
-    #y1, y2, y3 = weightFunc(x)
+    #y1, y2, y3 = weightFunc2(x)
     #print(x)
 
     # plot weight function
@@ -201,7 +212,8 @@ if __name__=="__main__":
     (m, n) = sol.y.shape
     firingRate = np.zeros((m, n))
     for i in range(n):
-        firingRate[:, i] = sigma(sol.y[:, i])
+        firingRate[:, i] = sigma(sol.y[:, i]) # w what authors use
+        #firingRate[:, i] = 15*linRect(sol.y[:, i]) # more modern approach
 
      
     plot3d(thetaGrid, timeGrid, firingRate)
@@ -209,11 +221,11 @@ if __name__=="__main__":
 
 
     # Exploration of eigenvalues of weight matrix
-    w1 = weightMat(x, 1)
-    w2 = weightMat(x, 401)
+    #w1 = weightMat(x, 1)
+    #w2 = weightMat(x, 401)
     #matVis(w1)
     #matVis(w2)
-    eVals1, eVecs1 = np.linalg.eig(w1)
-    eVals2, eVecs2 = np.linalg.eig(w2)
+    #eVals1, eVecs1 = np.linalg.eig(w1)
+    #eVals2, eVecs2 = np.linalg.eig(w2)
     
-    np.save("eigVals/eVals_oddOff.npy", eVals2)   #matVis(x)
+    #np.save("eigVals/eVals_oddOff.npy", eVals2)   #matVis(x)

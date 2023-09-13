@@ -194,6 +194,10 @@ if __name__=="__main__":
     # create initial condiitions
     u0 = initialCondRand(x)
     #u0 = initialCondFlat(x)
+   
+    ''' -------------------------------
+    End changable parameters. 
+    '''
 
     sol = solve_ivp(sys, [0, 1200], u0)
   
@@ -209,9 +213,78 @@ if __name__=="__main__":
         #firingRate[:, i] = 15*linRect(sol.y[:, i])  # more modern correction function.
         firingRate[:, i] = sigma(sol.y[:, i])      # what the author's use.
 
-     
+    # finally plot solution.
     plot3d(thetaGrid, timeGrid, firingRate)
     
+        
+    # velocity is constant so it may be computed using any time instants (after bump is formed)
+    # in light of this, compute vel between time step 20 and 21. 
+    bumpVal1 = np.max(firingRate[:, 40]) # returns max value at any node, 20th time step
+    id1 = np.where(firingRate[:, 40] == bumpVal1)[0] # returns index of max theta value.
+    #print(bumpVal1, firingRate[id1, 40])
+    
+    bumpVal2 = np.max(firingRate[:, 41]) # returns max value at any node, 21st time step
+    id2 = np.where(firingRate[:, 41] == bumpVal2)[0] # index of max theta val. 
+    #print(bumpVal2, firingRate[id2, 41])
+
+    bumpVal3 = np.max(firingRate[:, 30]) # returns max value at any node, 20th time step
+    id3 = np.where(firingRate[:, 30] == bumpVal3)[0] # returns index of max theta value.
+    #print(bumpVal3, firingRate[id3, 30])
+
+    bumpVal4 = np.max(firingRate[:, 31]) # returns max value at any node, 21st time step
+    id4 = np.where(firingRate[:, 31] == bumpVal4)[0] # index of max theta val. 
+    #print(bumpVal4, firingRate[id4, 31])
+
+
+    # finally compute velocity
+    #dTheta = x[id2] - x[id1]
+    #print(x[id2], x[id1])
+    #dt = sol.t[41] - sol.t[40]
+    #print(sol.t[41], sol.t[40])
+    #print(dTheta, dt)
+    #vel = dTheta/dt
+    #print("velocity:", vel, "at times:", sol.t[41])
+
+
+    #dTheta = x[id4] - x[id3]
+    #print(x[id4], x[id3])
+    #dt = sol.t[31] - sol.t[30]
+    #print(sol.t[31], sol.t[30])
+    #print(dTheta, dt)
+    #vel = dTheta/dt
+    #print("velocity:", vel, "at times:", sol.t[31])
+
+    velocities = np.zeros(len(sol.t) -1)
+    for i in range(1, len(sol.t)-1):
+        bumpVal1 = np.max(firingRate[:, i]) # returns max value at any node, 20th time step
+        id1 = np.where(firingRate[:, i] == bumpVal1)[0] # returns index of max theta value.
+        bumpVal2 = np.max(firingRate[:, i+1]) # returns max value at any node, 21st time step
+        id2 = np.where(firingRate[:, i+1] == bumpVal2)[0] # index of max theta val. 
+        dTheta = x[id2] - x[id1]
+        #if dTheta < 0:
+        #    dTheta = dTheta + 2*np.pi
+        dt = sol.t[i+1] - sol.t[i]
+        #print(dTheta, dt)
+        angSpeed = dTheta/dt
+        #print(angSpeed) 
+        velocities[i] = angSpeed[0] # can make an array with larger dim.
+        #print(dTheta)
+        #print(dt)
+        #print(angSpeed)
+        #print(type(angSpeed))
+        #print("timestep: ", i, "time: ", sol.t[i], "velocity:", angSpeed)
+    
+    velocities = velocities*1000 #move from rad/ms to rad/s
+
+    print(velocities)
+
+    # final velocity taken to be median. On sample runs,
+    # this seems to be a pretty good way to pick true value.
+    
+    #print(np.mean(velocities))
+    print(np.median(velocities))
+    
+
 
     #plot3d(thetaGrid, timeGrid, sol.y)
     
