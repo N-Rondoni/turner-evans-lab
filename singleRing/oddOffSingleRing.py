@@ -32,7 +32,7 @@ def weightFunc(x):
     oddOut = np.zeros(len(x))
     for i in range(len(x)):
         if x[i] == 0:
-            evenOut[i] = b - vs
+            evenOut = (b**2)*k - vs
             oddOut = 0
         else: 
             evenOut[i] = b*np.sin(b*k*np.pi*x[i])/(np.pi*x[i]) - vs
@@ -58,7 +58,7 @@ def weightFunc2(x, t):
 
     # define even/odd portions, close to sinc function and its derivative respectively
     if x == 0:
-        evenOut = b - vs
+        evenOut = (b**2)*k - vs
         oddOut =  0
     else: 
         evenOut = b*np.sin(b*k*np.pi*x)/(np.pi*x) - vs

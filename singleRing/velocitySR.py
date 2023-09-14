@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from scipy.integrate import solve_ivp
+import scipy.io
+import pingouin as pg
 import os
 
 def tuningCurve(x):
@@ -38,6 +40,7 @@ def weightFunc(x):
             evenOut[i] = b*np.sin(b*k*np.pi*x[i])/(np.pi*x[i]) - vs
             oddOut[i] = gamma*((1/x[i])*(b**2)*k*np.cos(b*k*np.pi*x[i]) - (1/(np.pi * x[i]**2))*b*np.sin(b*k*np.pi*x[i]))
     # create odd portion, is derivative of even wrt x  
+    oddOut = 2*oddOut
     totalOut = evenOut + oddOut
     return evenOut, oddOut, totalOut
 
@@ -61,7 +64,7 @@ def weightFunc2(x):
     else: 
         evenOut = b*np.sin(b*k*np.pi*x)/(np.pi*x) - vs
         oddOut = gamma*((1/x)*(b**2)*k*np.cos(b*k*np.pi*x) - (1/(np.pi * x**2))*b*np.sin(b*k*np.pi*x))
-
+    oddOut = 2*oddOut
     totalOut = evenOut + oddOut
     return totalOut
 
@@ -123,6 +126,7 @@ def sys(t, u):
     
     
     du = (1/Tau)*(-u + (1/len(u)) * np.matmul(W, f))
+    du = 1000*du # convert from ms to s. 
     return du
 
 
@@ -194,12 +198,13 @@ if __name__=="__main__":
     # create initial condiitions
     u0 = initialCondRand(x)
     #u0 = initialCondFlat(x)
-   
+
+    
     ''' -------------------------------
     End changable parameters. 
     '''
 
-    sol = solve_ivp(sys, [0, 1200], u0)
+    sol = solve_ivp(sys, [0, 1.2], u0)
   
 
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
@@ -218,72 +223,60 @@ if __name__=="__main__":
     
         
     # velocity is constant so it may be computed using any time instants (after bump is formed)
-    # in light of this, compute vel between time step 20 and 21. 
-    bumpVal1 = np.max(firingRate[:, 40]) # returns max value at any node, 20th time step
-    id1 = np.where(firingRate[:, 40] == bumpVal1)[0] # returns index of max theta value.
-    #print(bumpVal1, firingRate[id1, 40])
+    # compute at each as some weirdness can occur. 
     
-    bumpVal2 = np.max(firingRate[:, 41]) # returns max value at any node, 21st time step
-    id2 = np.where(firingRate[:, 41] == bumpVal2)[0] # index of max theta val. 
-    #print(bumpVal2, firingRate[id2, 41])
-
-    bumpVal3 = np.max(firingRate[:, 30]) # returns max value at any node, 20th time step
-    id3 = np.where(firingRate[:, 30] == bumpVal3)[0] # returns index of max theta value.
-    #print(bumpVal3, firingRate[id3, 30])
-
-    bumpVal4 = np.max(firingRate[:, 31]) # returns max value at any node, 21st time step
-    id4 = np.where(firingRate[:, 31] == bumpVal4)[0] # index of max theta val. 
-    #print(bumpVal4, firingRate[id4, 31])
-
-
-    # finally compute velocity
-    #dTheta = x[id2] - x[id1]
-    #print(x[id2], x[id1])
-    #dt = sol.t[41] - sol.t[40]
-    #print(sol.t[41], sol.t[40])
-    #print(dTheta, dt)
-    #vel = dTheta/dt
-    #print("velocity:", vel, "at times:", sol.t[41])
-
-
-    #dTheta = x[id4] - x[id3]
-    #print(x[id4], x[id3])
-    #dt = sol.t[31] - sol.t[30]
-    #print(sol.t[31], sol.t[30])
-    #print(dTheta, dt)
-    #vel = dTheta/dt
-    #print("velocity:", vel, "at times:", sol.t[31])
-
+    # your own homemade version, which has some edge case issues:
     velocities = np.zeros(len(sol.t) -1)
     for i in range(1, len(sol.t)-1):
-        bumpVal1 = np.max(firingRate[:, i]) # returns max value at any node, 20th time step
+        bumpVal1 = np.max(firingRate[:, i]) # returns max value at any node, i-th time step
         id1 = np.where(firingRate[:, i] == bumpVal1)[0] # returns index of max theta value.
-        bumpVal2 = np.max(firingRate[:, i+1]) # returns max value at any node, 21st time step
+        bumpVal2 = np.max(firingRate[:, i+1]) # returns max value at any node, i+1st time step
         id2 = np.where(firingRate[:, i+1] == bumpVal2)[0] # index of max theta val. 
         dTheta = x[id2] - x[id1]
-        #if dTheta < 0:
+        #if dTheta >= np.pi:
+        #    dTheta = dTheta - 2*np.pi
+        #elif dTheta <= -np.pi:
         #    dTheta = dTheta + 2*np.pi
         dt = sol.t[i+1] - sol.t[i]
-        #print(dTheta, dt)
         angSpeed = dTheta/dt
-        #print(angSpeed) 
         velocities[i] = angSpeed[0] # can make an array with larger dim.
-        #print(dTheta)
-        #print(dt)
-        #print(angSpeed)
-        #print(type(angSpeed))
-        #print("timestep: ", i, "time: ", sol.t[i], "velocity:", angSpeed)
-    
-    velocities = velocities*1000 #move from rad/ms to rad/s
 
-    print(velocities)
+
+    #print(velocities)
 
     # final velocity taken to be median. On sample runs,
     # this seems to be a pretty good way to pick true value.
     
     #print(np.mean(velocities))
-    print(np.median(velocities))
+    print("median velocity:", np.median(velocities))
     
+    vel = np.zeros(len(sol.t) - 1)
+    for i in range(1, len(sol.t)-1):
+        m1 = pg.circ_mean(x, firingRate[:,i])
+        m2 = pg.circ_mean(x, firingRate[:,i+1])
+        tempVel = (m1 - m2) / (sol.t[i] - sol.t[i+1])
+        vel[i] = tempVel
+
+    #`print(vel)
+    print("Pengouin's median velocity: ", np.median(vel))
+
+    # compute area under weightFunc to measure the oddness of it. 
+
+
+    print(np.linalg.norm(y2))
+    
+    # load in velocities from the data
+    file_path = "data/vRot_cond1_allFly1_stripe2.mat"
+    mat = scipy.io.loadmat(file_path)
+    realVel = mat['vel']
+    (m, n) = realVel.shape #flipped from other data
+    
+    
+    # set up time corresponding to data
+    imRate = 11.4
+    tEnd = m*(1/imRate)
+    timeVec = np.linspace(0, tEnd, m)
+
 
 
     #plot3d(thetaGrid, timeGrid, sol.y)
