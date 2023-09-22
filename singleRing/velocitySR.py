@@ -40,15 +40,16 @@ def weightFunc(x):
             evenOut[i] = b*np.sin(b*k*np.pi*x[i])/(np.pi*x[i]) - vs
             oddOut[i] = gamma*((1/x[i])*(b**2)*k*np.cos(b*k*np.pi*x[i]) - (1/(np.pi * x[i]**2))*b*np.sin(b*k*np.pi*x[i]))
     # create odd portion, is derivative of even wrt x  
-    oddOut = 2*oddOut
+   
+
     totalOut = evenOut + oddOut
     return evenOut, oddOut, totalOut
 
 
-def weightFunc2(x):
+def weightFunc2(x, t):
     '''
         creates weight functions to be used in filling of weight matrix. Identical values as weightFunc, 
-        but on individual element not list.
+        but on individual element not list. Requires realVel, timeVec to be defined before use.
     '''
     # params
     b = .35    # amplitude
@@ -64,11 +65,21 @@ def weightFunc2(x):
     else: 
         evenOut = b*np.sin(b*k*np.pi*x)/(np.pi*x) - vs
         oddOut = gamma*((1/x)*(b**2)*k*np.cos(b*k*np.pi*x) - (1/(np.pi * x**2))*b*np.sin(b*k*np.pi*x))
-    oddOut = 2*oddOut
-    totalOut = evenOut + oddOut
+
+    # interpolate velocities to match times
+    velInterp = np.interp(t, timeVec, realVel)
+    
+    # update odd portion with velocity. Found by noting each scalar multiple of odd out scales vel accordingly.
+    # Eg., want 1 odd out to yield vel of 6.2
+
+ 
+    scalarMult =  (1/6.294898346736869)*velInterp
+
+    totalOut = evenOut + scalarMult*oddOut
     return totalOut
 
-def weightMat(x):
+
+def weightMat(x, t):
     W = np.zeros((len(x), len(x)))    
     for i in range(len(x)):
         for j in range(len(x)):
@@ -78,7 +89,7 @@ def weightMat(x):
                 temp = x[i] - x[j] + 2*np.pi
             else:
                 temp = x[i] - x[j] 
-            W[i, j] = weightFunc2(temp)
+            W[i, j] = weightFunc2(temp, t)
     return W
     
 
@@ -98,6 +109,7 @@ def sigma(s):
     for i in range(len(s)):
         out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
     return out
+
 
 def linRect(s):
     # here is a more modern correction function. Graphs are the same essentially
@@ -119,7 +131,7 @@ def sys(t, u):
 
     thetaSpace = np.linspace(-np.pi, np.pi, N, endpoint=False)
     
-    W = weightMat(thetaSpace)
+    W = weightMat(thetaSpace, t)
     #f = forcingVec(thetaSpace) creates constant forcing
     f = sigma(u) #creates the travelling bump
     #f = linRect(u) #is not good
@@ -158,9 +170,9 @@ def plot3d(x, y, z):
     ax = plt.axes(projection='3d')
     surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='viridis') 
     ax.set_title("Firing Rate vs Time in Single Ring", fontsize = 18)
-    ax.set_ylabel('Time (ms)')
+    ax.set_ylabel('Time (s)')
     ax.set_xlabel(r'$\theta$')
-    ax.set_zlabel(r'$\sigma(u)$ (Hz)')
+    ax.set_zlabel(r'$\sigma(u)$ (Hz?)')
     #ax.view_init(30, 132) #uncomment to see backside
     plt.colorbar(surf)
     plt.show()
@@ -185,7 +197,6 @@ def matVis(A):
 if __name__=="__main__":
     # set number of spatial discretizations
     N = 48
-
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
@@ -196,16 +207,31 @@ if __name__=="__main__":
     plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
-    u0 = initialCondRand(x)
-    #u0 = initialCondFlat(x)
+    #u0 = initialCondRand(x)
+    u0 = initialCondFlat(x)
 
     
     ''' -------------------------------
     End changable parameters. 
     '''
+    # load in velocities from the data,
+    # reshape it so it plays well with others.
+    file_path = "data/vRot_cond1_allFly1_stripe2.mat"
+    mat = scipy.io.loadmat(file_path)
+    temp = mat['vel']
+    (m, n) = temp.shape #flipped from other data
+    realVel = np.zeros(m)
+    realVel = temp[:, 0]
 
-    sol = solve_ivp(sys, [0, 1.2], u0)
-  
+    # set up time corresponding to data
+    imRate = 11.4
+    tEnd = m*(1/imRate) # seems to be doubled in Dan's data
+    timeVec = np.linspace(0, tEnd, m)
+    print(timeVec[0] - timeVec[1])
+    print(tEnd)
+
+    sol = solve_ivp(sys, [0, tEnd], u0)
+
 
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
     
@@ -224,7 +250,8 @@ if __name__=="__main__":
         
     # velocity is constant so it may be computed using any time instants (after bump is formed)
     # compute at each as some weirdness can occur. 
-    
+    # this section is used to determine vel givec odd component.
+
     # your own homemade version, which has some edge case issues:
     velocities = np.zeros(len(sol.t) -1)
     for i in range(1, len(sol.t)-1):
@@ -248,7 +275,7 @@ if __name__=="__main__":
     # this seems to be a pretty good way to pick true value.
     
     #print(np.mean(velocities))
-    print("median velocity:", np.median(velocities))
+    #print("median velocity:", np.median(velocities))
     
     vel = np.zeros(len(sol.t) - 1)
     for i in range(1, len(sol.t)-1):
@@ -258,26 +285,12 @@ if __name__=="__main__":
         vel[i] = tempVel
 
     #`print(vel)
-    print("Pengouin's median velocity: ", np.median(vel))
+    #print("Pengouin's median velocity: ", np.median(vel))
 
     # compute area under weightFunc to measure the oddness of it. 
 
-
-    print(np.linalg.norm(y2))
-    
-    # load in velocities from the data
-    file_path = "data/vRot_cond1_allFly1_stripe2.mat"
-    mat = scipy.io.loadmat(file_path)
-    realVel = mat['vel']
-    (m, n) = realVel.shape #flipped from other data
     
     
-    # set up time corresponding to data
-    imRate = 11.4
-    tEnd = m*(1/imRate)
-    timeVec = np.linspace(0, tEnd, m)
-
-
 
     #plot3d(thetaGrid, timeGrid, sol.y)
     
