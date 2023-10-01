@@ -215,7 +215,7 @@ def matVis(A):
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 48
+    N = 96
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
@@ -251,14 +251,8 @@ if __name__=="__main__":
     timeVec = np.zeros(m1)
     timeVec = temp[:-1, 0] # chop off last time for same number of vel
     tEnd = timeVec[-1]     # this also reshapes
-    tEnd = 3.5             # uncomment for faster testing
+    #tEnd = 3.5             # uncomment for faster testing
     
-    #imRate = 6
-    #tEnd = m*(1/imRate) # seems to be doubled in Dan's data
-    #timeVec = np.linspace(0, tEnd, m)
-    #print(timeVec[0] - timeVec[1])
-    #print(tEnd)
-
     sol = solve_ivp(sys, [0, tEnd], u0)
 
 
