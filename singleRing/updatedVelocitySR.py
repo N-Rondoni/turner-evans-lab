@@ -55,8 +55,8 @@ def weightFunc2(x, t):
     b = .35    # amplitude
     k = 3      # period
     vs = .1    # vertical shift
-    gamma = -0.063 # used as odd coeff
-    alpha = 0.00201
+    gamma = -0.063 # used as coeff in odd part
+
 
     # define even/odd portions, close to sinc function and its derivative respectively
     if x == 0:
@@ -70,9 +70,7 @@ def weightFunc2(x, t):
     velInterp = np.interp(t, timeVec, realVel)
     
     # update odd portion with velocity. Found by noting each scalar multiple of odd out scales vel accordingly.
-    # Eg., want 1 odd out to yield vel of 6.2
-
- 
+    # Eg., want 1 odd out to yield vel of 6.2 
     scalarMult =  (1/6.294898346736869)*velInterp
 
     totalOut = evenOut + scalarMult*oddOut
@@ -215,7 +213,7 @@ def matVis(A):
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 96
+    N = 48
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
@@ -242,6 +240,7 @@ if __name__=="__main__":
     (m, n) = temp.shape #flipped from other data
     realVel = np.zeros(m)
     realVel = temp[:, 0]
+    print(m,n)
 
     # instead of using imaging rate, load in time data.
     file_path2 = "data/time_cond1_allFly1_stripe2.mat"
@@ -315,6 +314,7 @@ if __name__=="__main__":
 
     np.save("data/firingRates.npy", firingRate)
     np.save("data/firingTimes.npy", sol.t)
+    np.save("data/velSim.npy", vel)
     matVis(firingRate) 
     
 
