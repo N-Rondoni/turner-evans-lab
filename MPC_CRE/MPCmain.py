@@ -28,10 +28,26 @@ def plotThreeLines(x, y1, y2, y3):
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig1_' + str(i) + '.png'
+    filename = 'MPC_fig1_node' + str(row) + '.png'
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-    #plt.show() 
+  
+
+def plotFourLines(x, y1, y2, y3, y4):
+    plt.figure(2)
+    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
+    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
+    plt.plot(x, y3, '--', linewidth = 1, label = r'$CI^{*}$')
+    plt.plot(x, y4, linewidth = 2, label = r'$s$')
+    plt.title('Dynamics Derived from CRN', fontsize = 18)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'Concentration', fontsize = 14)
+    plt.legend()
+    filename = 'MPC_fig2_node' + str(row) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+   
+
 
 def plotErr(x, y):
     plt.figure(2)
@@ -99,7 +115,7 @@ if __name__=="__main__":
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
             't_step': 1/6, # (s)
-            f'n_robust': 1,
+            'n_robust': 1,
             'store_full_solution': True,
             }
     
@@ -110,16 +126,14 @@ if __name__=="__main__":
 
 
     # define objective, which is to miminize the difference between Ci_m and Ci. 
-    mterm = (model.x['Ci'] - model.tvp['Ci_m'])**2                   # terminal cost
+    mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                   # terminal cost
     lterm = mterm                                                    # stage cost 
  
     mpc.set_objective(mterm = mterm, lterm = lterm)
-    mpc.set_rterm(s=1.0) # sets a penalty on changes in s
+    mpc.set_rterm(s=1) # sets a penalty on changes in s
 
     # make sure the objective/cost updates with CI_measured and time.    
     tvp_template = mpc.get_tvp_template()
-    print(tvp_template)
-    
     mpc.set_tvp_fun(tvp_fun)
 
 
@@ -128,7 +142,7 @@ if __name__=="__main__":
     mpc.bounds['lower', '_x', 'Ci'] = 0.0
     mpc.bounds['lower', '_x', 'CiF'] = 0.0
 
-    mpc.bounds['lower', '_u', 's'] = - 0.1 # slow diffusion
+    mpc.bounds['lower', '_u', 's'] = - 5 # slow diffusion
 
 
     mpc.setup()
@@ -147,19 +161,18 @@ if __name__=="__main__":
             }
     simulator.set_param(**params_simulator)
     # account for tvp
-    tvp_template1 = simulator.get_tvp_template()
-    #print(tvp_template1)
+    tvp_template1 = simulator.get_tvp_template() # must differ from previous template name
     simulator.set_tvp_fun(tvp_fun_sim)
-    #print(tvp_template1)
+
 
     simulator.setup()
 
     # finally begin closed loop simulation
     
     # define initial conditions
-    Ca_0 = 0  #Ca^{2+} [mol/area]?
+    Ca_0 = 50  #Ca^{2+} [mol/area]?
     Ci_0 = 50   #CI         
-    CiF_0 = 50  #CI^* #was previously 0, real data readouts start with some concentration.
+    CiF_0 = 51  #CI^* #was previously 0, real data readouts start with some concentration.
     x0 = np.array([Ca_0, Ci_0, CiF_0])
    
     # set for controller, simulator, and estimator
@@ -168,14 +181,47 @@ if __name__=="__main__":
     estimator.x0 = x0
     mpc.set_initial_guess()
 
-
     # finally perform closed loop simulation
-    n_steps = 100
+    n_steps = 700
     for k in range(n_steps):
         u0 = mpc.make_step(x0)
         y_next = simulator.make_step(u0)
         x0 = estimator.make_step(y_next)
 
 
+#    print(mpc.data['_u'])
+#    print(mpc.data['_x'])
+#    print(mpc.data['_time'])
+
+    # pull final solutions for ease of use
+    Ca_f = mpc.data['_x'][:, 0]
+    Ci_f = mpc.data['_x'][:, 1]
+    CiF_f = mpc.data['_x'][:, 2]
+    t_f = mpc.data['_time']
+    s = mpc.data['_u']
+   
+    #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
+
+    plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
+    plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
 
 
+
+
+
+    # check error between Ci_M and Ci_sim
+    CI_Meas_interp = np.interp(t_f, timeVec, CI_Meas)
+    CI_Meas_interp = CI_Meas_interp[:, 0] # CiF_f different shape
+    print(np.shape(t_f))
+    print(np.shape(CI_Meas_interp))
+    print(np.shape(CiF_f))
+
+
+    print(np.linalg.norm(CI_Meas_interp - CiF_f))
+
+    print(np.shape((CI_Meas_interp - CiF_f)))
+
+
+    plt.figure(3)    
+    plt.plot(t_f, (CI_Meas_interp - CiF_f))
+    plt.show()
