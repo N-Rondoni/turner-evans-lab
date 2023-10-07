@@ -12,66 +12,13 @@ from casadi import *
  
 def tvp_fun(t_now):
     for k in range(n_horizon + 1):
-            tvp_template['_tvp', k, 'Ci_m'] = np.interp(t_now, timeVec, CI_Meas)
+#            tvp_template['_tvp', k, 'Ci_m'] = np.interp(t_now, timeVec, CI_Meas) think you want time to march on here.
+        tvp_template['_tvp', k, 'Ci_m'] = np.interp(t_now + k*t_step, timeVec, CI_Meas)
     return tvp_template
 
-   
-
-tPrev = 0
-ePrev = 0
-eSum = 0
-#sVec = np.array([0])
-
-def CRN(t, A):
-    global tPrev
-    global ePrev
-    global eSum
-    """
-    Defines the differential equations for a coupled chemical reaction network.
-    
-    Arguments: 
-        A : vector of the state variables: Ca^{2+}, CI, CI^* respectively. 
-                A = [x, y, z]
-        t : time
-        p : vector of the parameters:
-                p = [kf, kr, alpha, gamma]
-    """
-    x, y, z = A
-    #kf, kr, alpha, gamma, beta = p
-    kf, kr, alpha, gamma, kProp, kDer, kInt = p
-
-    # define chemical master equation 
-    # this is the RHS of the system     
-    
-    # interpolate because data doesn't have values for all times used by solver.
-    CI_MeasTemp = np.interp(t, timeVec, CI_Meas[:len(timeVec)])
-    
-    # Keep current error to compute eProp, and der for next pass. 
-    # proportional portion
-    eCurrent = (z - CI_MeasTemp)
-    
-    # derivative portion
-    if t == tPrev:
-        eDer = 0
-    else:
-        eDer = (eCurrent - ePrev)/(t - tPrev) 
-
-    # integral portion (approximatd with Reimann type sum)
-    eSum = eSum + (t - tPrev)*eCurrent
-    
-    s = -kProp*eCurrent + -kDer*eDer + -kInt*eSum 
-
-    #print(t, s)
-    du = [alpha*s - gamma*x + kr*z - kf*y*x, # + beta
-        kr*z - kf*y*x, 
-        kf*y*x - kr*z] 
-    
-    #print(t, "////", du) 
-
-    tPrev = t
-    ePrev = eCurrent
-
-    return du
+def tvp_fun_sim(t_now):
+    tvp_template['Ci_m'] = np.interp(t_now, timeVec, CI_Meas)
+    return tvp_template
 
 def plotThreeLines(x, y1, y2, y3):
     plt.figure(1)
@@ -130,8 +77,8 @@ if __name__=="__main__":
     # states struct, optimization variables
     # S is an unknown parameter. _x denotes var, _p param?
     Ca = model.set_variable('_x', 'Ca')
-    CiF = model.set_variable('_x', 'CiF')
     Ci = model.set_variable('_x', 'Ci') #
+    CiF = model.set_variable('_x', 'CiF')
 
     # define ODEs and parameters, kr << kf
     kf = 0.0513514
@@ -153,7 +100,7 @@ if __name__=="__main__":
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
             't_step': 1/6, # (s)
-            'n_robust': 1,
+            f'n_robust': 1,
             'store_full_solution': True,
             }
     
@@ -198,9 +145,34 @@ if __name__=="__main__":
             'reltol': 1e-10,
             't_step': 1/6, # (s)
             }
-
     simulator.set_param(**params_simulator)
+    # account for tvp
+    tvp_template = simulator.get_tvp_template()
+    simulator.set_tvp_fun(tvp_fun_sim)
+
     simulator.setup()
+
+    # finally begin closed loop simulation
+    
+    # define initial conditions
+    Ca_0 = 0  #Ca^{2+} [mol/area]?
+    Ci_0 = 50   #CI         
+    CiF_0 = 50  #CI^* #was previously 0, real data readouts start with some concentration.
+    x0 = np.array([Ca_0, Ci_0, CiF_0])
+   
+    # set for controller, simulator, and estimator
+    mpc.x0 = x0
+    simulator.x0 = x0
+    estimator.x0 = x0
+    mpc.set_initial_guess()
+
+
+    # finally perform closed loop simulation
+    n_steps = 100
+    for k in range(n_steps):
+        u0 = mpc.make_step(x0)
+        y_next = simulator.make_step(u0)
+        x0 = estimator.make_step(y_next)
 
 
 
@@ -215,12 +187,7 @@ if __name__=="__main__":
     #nDatPoints = 5
     #timeVec = np.linspace(0, tEnd, nDatPoin
 
-    # define initial conditions
-    X = 0 #Ca^{2+}
-    Y = 50 #CI
-    Z = 50  #CI^* #was previously 0, real data readouts start with some concentration.
-
-        # gain coeff
+            # gain coeff
     kProp = 100
     kDer = 1
     kInt = 1
