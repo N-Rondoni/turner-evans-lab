@@ -12,13 +12,12 @@ from casadi import *
  
 def tvp_fun(t_now):
     for k in range(n_horizon + 1):
-#            tvp_template['_tvp', k, 'Ci_m'] = np.interp(t_now, timeVec, CI_Meas) think you want time to march on here.
         tvp_template['_tvp', k, 'Ci_m'] = np.interp(t_now + k*t_step, timeVec, CI_Meas)
     return tvp_template
 
 def tvp_fun_sim(t_now):
-    tvp_template['Ci_m'] = np.interp(t_now, timeVec, CI_Meas)
-    return tvp_template
+    tvp_template1['Ci_m'] = np.interp(t_now, timeVec, CI_Meas)
+    return tvp_template1
 
 def plotThreeLines(x, y1, y2, y3):
     plt.figure(1)
@@ -119,6 +118,7 @@ if __name__=="__main__":
 
     # make sure the objective/cost updates with CI_measured and time.    
     tvp_template = mpc.get_tvp_template()
+    print(tvp_template)
     
     mpc.set_tvp_fun(tvp_fun)
 
@@ -147,8 +147,10 @@ if __name__=="__main__":
             }
     simulator.set_param(**params_simulator)
     # account for tvp
-    tvp_template = simulator.get_tvp_template()
+    tvp_template1 = simulator.get_tvp_template()
+    #print(tvp_template1)
     simulator.set_tvp_fun(tvp_fun_sim)
+    #print(tvp_template1)
 
     simulator.setup()
 
@@ -176,23 +178,4 @@ if __name__=="__main__":
 
 
 
-
-    # compute total time, (imaging was done at 11.4hz), create vec of time samples timeVec
-    # timeVec used within solver to compute interpolated value of S at a particular time. np.interp(t, timeVec, CI_Meas)
-    imRate = 1/6
-    tEnd = n*(imRate)
-    timeVec = np.linspace(0, tEnd, n)
-    # short time testing uncomment below ###
-    #tEnd = .1
-    #nDatPoints = 5
-    #timeVec = np.linspace(0, tEnd, nDatPoin
-
-            # gain coeff
-    kProp = 100
-    kDer = 1
-    kInt = 1
-    
-    # pack up parameters and ICs
-    p = [kf, kr, alpha, gamma, kProp, kDer, kInt]
-    u0 = [X, Y, Z]
 
