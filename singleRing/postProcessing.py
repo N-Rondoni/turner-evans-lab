@@ -27,8 +27,8 @@ def matVis(A):
 if __name__ == "__main__":
 
     # plot firing rates as heatmap
-    firingRate = np.load("data/firingRates_96.npy") 
-    firingTimes = np.load("data/firingTimes_96.npy") # is sol.t in updatedVelocity.py
+    firingRate = np.load("data/firingRates.npy") 
+    firingTimes = np.load("data/firingTimes.npy") # is sol.t in updatedVelocity.py
     #print(len(firingTimes))
     print(np.shape(firingRate))
 
@@ -55,14 +55,17 @@ if __name__ == "__main__":
 
     # plot multiple cross sections
     plt.figure(3)
-    times = [2000, 2400]
-    colors = ['blue', 'green']
+    times = [2000, 2400, 2600]
+    colors = ['blue', 'green', 'orange']
     j = 0
     for i in times:
         plt.xlabel(r'$\theta$', fontsize = 14)
         plt.ylabel(r'Firing Rate $f$ (Hz)', fontsize = 14)
         plt.title(r'Snapshots of Bump Profile', fontsize = 20) 
-        plt.plot(x, firingRate[:,i], alpha=0.7, color = colors[j], label='t= ' +  str(firingTimes[i])[:5] + 's') 
+        if j == 0:
+            plt.plot(x, firingRate[:,i], alpha=0.7, color = colors[j], label='t= ' +  str(firingTimes[i])[:5] + 's')
+        else:
+            plt.plot(x, firingRate[:,i], linestyle='--', alpha=0.7, color = colors[j], label='t= ' +  str(firingTimes[i])[:5] + 's') 
         plt.xticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
         j = j + 1    
     plt.legend()
@@ -88,11 +91,11 @@ if __name__ == "__main__":
     tEnd = timeVec[-1]     # this also reshapes
 
     # compare velocities, simulated and real, at specific time instants.
-    #velInterp = np.interp(timeVec, firingTimes[:-1], velSim)
+    velInterp = np.interp(timeVec, firingTimes[:-1], velSim)
     
-    #error =(1/len(velInterp))*(velInterp - realVel)**2
+    error =(1/len(velInterp))*(velInterp - realVel)**2
     
-    #print("Mean Square Error:", np.sum(error)) # velocities a bit off. 
+    print("Mean Square Error:", np.sum(error)) # velocities a bit off. 
 
 
     #  check location of bump (where firing rate is maximal)

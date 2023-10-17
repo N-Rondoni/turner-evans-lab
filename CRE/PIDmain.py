@@ -64,6 +64,8 @@ def CRN(t, A):
     du = [alpha*s - gamma*x + kr*z - kf*y*x, # + beta
         kr*z - kf*y*x, 
         kf*y*x - kr*z] 
+    
+    #print(t, "////", du) 
 
     tPrev = t
     ePrev = eCurrent
@@ -133,12 +135,12 @@ if __name__=="__main__":
     Z = 50  #CI^* #was previously 0, real data readouts start with some concentration.
 
     # define constants/reaction parameters, kr << kf
-    kf = 10#kf = 7.6 #kf = 100 #x10ing this and below seems to reeally lengthen runtime. 
-    kr = 1 #kr = 7.6*148#kr = 5 #was 50 to create plots from meeting 5_25 /// 
-    alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
-    gamma = 100
+    kf = 0.0513514#kf = 5.13514E7#kf = 10#kf = 7.6 #kf = 100 #x10ing this and below seems to reeally lengthen runtime. 
+    kr = 7.6 #kr = 7.6  #kr = 1   #kr = 7.6*148#kr = 5 #was 50 to create plots from meeting 5_25 /// 
+    alpha = 1#alpha = 10  #was 10 with Marcella. Uped alpha to increase production rate of Ca^{2+}. Scaled gamma accordingly. 
+    gamma = 1#gamma = 100 # decreasing this value increases Ca^{2+}. with gamma = .1, Ca^{2+} gets up to 8. 
     # gain coeff
-    kProp = 1
+    kProp = 100
     kDer = 1
     kInt = 1
     
@@ -160,6 +162,7 @@ if __name__=="__main__":
     # Post Processing for Plotting
     # prop portion
     eCurrent = (sol.y[2,:] - CI_Meas[:len(timeVec)]) 
+    print(eCurrent.shape)
         
     # derivative portion
     # compute t vec (many delta t values)
@@ -202,6 +205,7 @@ if __name__=="__main__":
     # plot 3 values solved for in CRE
     plt.figure(1)
     y1 = sol.y[0,:]
+    print(y1[0:10])
     y2 = sol.y[1,:] 
     y3 = sol.y[2,:]
     plt.plot(sol.t, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
@@ -290,7 +294,7 @@ if __name__=="__main__":
     np.save('data/sol_node_' + str(row), sol.y)
     #plt.
 
-    #plt.show()
+    plt.show()
 
 
     #np.save("temp.dat", sol.y[0,:])

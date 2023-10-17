@@ -208,6 +208,17 @@ plt.legend(loc = 'best')
 #    temp = np.append(temp, np.mean(kdSim))
 
 #print(temp)
+plt.figure(14)
+tspanFire = np.linspace(0, np.ceil(tVals[-1]), int(np.ceil(tVals[-1])))
+amount = 9
+posIncreases = np.zeros((amount, 66)) #sub 1 because of the way sVec created
+for i in range(amount):
+    posIncreases[i, :] = np.load('data/QSSA_PosIncreases_node_' + str(i) + '.npy')
+    plt.plot(tspanFire[1:], posIncreases[i, 1:])
+
+
+plt.figure(15)
+plt.imshow(posIncreases[:,1:])
 
 
 plt.show()

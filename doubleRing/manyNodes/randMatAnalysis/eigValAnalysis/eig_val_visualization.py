@@ -35,7 +35,7 @@ if __name__ =="__main__":
     eigvals = np.load("maximal_eVals_random_matrix.npy")
     real_part = np.real(eigvals)
     real_part = np.sort(real_part)
-    im_part = np. imag(eigvals)
+    im_part = np.imag(eigvals)
     #print(len(real_part))
     kernel = stats.gaussian_kde(real_part)
     

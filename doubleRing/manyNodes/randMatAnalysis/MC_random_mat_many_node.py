@@ -41,7 +41,7 @@ def ws(theta):
             Theta: value of theta on the grid.
     """
     # want perturbations of the following:
-    #[J0, J1] = [-60, 80] # marginal 
+    [J0, J1] = [-60, 80] # marginal 
     #[J0, J1] = [60, 80] # divergent
     #[J0, J1] = [-60, -80] # homogenous
     
@@ -69,7 +69,7 @@ def wd(theta):
             Theta: value of theta on the grid
     """
     # want perturbations of the following:
-    #[K0, K1] = [-5, 80] # marginal 
+    [K0, K1] = [-5, 80] # marginal 
     #[K0, K1] = [100, 80] # divergent
     #[K0, K1] = [-100, -80] # homogenous
 
@@ -93,7 +93,7 @@ def weight_mx(spatial_num):
     n = 2*spatial_num + 2
     weightMatrix = np.zeros((n, n))
     i = 0
-    while (i < n):
+    while (i < n/2):
         j = 0
         while (j < n):
             if j < n/2:
@@ -102,6 +102,17 @@ def weight_mx(spatial_num):
                 weightMatrix[i, j] = wd(thetas[i] - thetas[j])
             j = j+1
         i = i+1
+    while (i < n): #this is new but I'm pretty sure correct
+        j = 0
+        while (j < n):
+            if j < n/2:
+                weightMatrix[i, j] = wd(thetas[i] - thetas[j])
+            if j >= n/2: 
+                weightMatrix[i, j] = ws(thetas[i] - thetas[j])
+            j = j+1
+        i = i+1
+
+        
     weightMatrix = (1/(2*np.pi*(spatial_num + 1)))*weightMatrix # this could be wrong. 
     #weightMatrix = (1/(spatial_num + 1))*weightMatrix # this could be wrong. 
 
@@ -188,13 +199,13 @@ if __name__=='__main__':
         #[J0, J1] = [60, 80] # divergent
         #[J0, J1] = [-60, -80] # homogenous
 
-        std_dev = 200 #200 will be divergent
-        J0 = np.random.normal(-60, std_dev)
-        J1 = np.random.normal(80, std_dev)
+        #std_dev = 200 #200 will be divergent
+        #J0 = np.random.normal(-60, std_dev)
+        #J1 = np.random.normal(80, std_dev)
 
-        std_dev_2 = 200 #200 divergent
-        K0 = np.random.normal(-5, std_dev_2)
-        K1 = np.random.normal(80, std_dev_2)
+        #std_dev_2 = 200 #200 divergent
+        #K0 = np.random.normal(-5, std_dev_2)
+        #K1 = np.random.normal(80, std_dev_2)
 
         sol = solve_ivp(SYS, t_span, s0, t_eval=t, dense_output=False)
 

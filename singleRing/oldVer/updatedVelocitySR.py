@@ -4,11 +4,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+import matplotlib.colors as colors
+plt.rcParams['svg.fonttype'] = 'none'
 from scipy.integrate import solve_ivp
 import scipy.io
 import pingouin as pg
 import os
-
+   
 def tuningCurve(x):
     A = 2.53
     k = 8.08 
@@ -199,25 +201,28 @@ def plotWeights(x, y1, y2, y3):
 
 
 def matVis(A):
-    fig = plt.figure()
-    figMat = plt.imshow(A, aspect='auto', extent = [0, sol.t[-1], -np.pi, np.pi])
-    plt.title('Heatmap of Firing Rate', fontsize = 22)
-    plt.xlabel(r'Time (s)', fontsize = 16)
-    plt.ylabel(r'Hd Cell $\theta$', fontsize = 16)
-    plt.colorbar(figMat)
+    vmax = np.max(A)
+    vmin = np.min(A)  
+    norm = colors.TwoSlopeNorm(vmin=vmin, vcenter = 0, vmax = vmax) # centers colorbar around 0
+    plt.matshow(A, extent = [-np.pi, np.pi, np.pi, -np.pi], cmap='bwr', norm=norm)
+    plt.xticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+    plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+    plt.xlabel(r'$\theta$', fontsize = 14)
+    plt.ylabel(r'$\theta$', fontsize = 14)
+    plt.colorbar()
+    plt.title("Visualization of Weight Matrix", fontsize = 20)
     plt.show()
-
+    
 
 ## End Plotting Functions ## -------------------------------------
 
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 48
+    N = 96
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
-    print(initialCondBias(x))
     y1, y2, y3 = weightFunc(x)
     #print(x)
 
@@ -232,7 +237,7 @@ if __name__=="__main__":
     ''' -------------------------------
     End changable parameters. 
     '''
-    # load in velocities from the data,
+        # load in velocities from the data,
     # reshape it so it plays well with others.
     file_path = "data/vRot_cond1_allFly1_stripe2.mat"
     mat = scipy.io.loadmat(file_path)
@@ -251,7 +256,15 @@ if __name__=="__main__":
     timeVec = temp[:-1, 0] # chop off last time for same number of vel
     tEnd = timeVec[-1]     # this also reshapes
     #tEnd = 3.5             # uncomment for faster testing
+
+    # temp plotting
+    w = weightMat(x, 0)
+    matVis(w)
     
+    w = weightMat(x, 100)
+    matVis(w)
+    ##
+
     sol = solve_ivp(sys, [0, tEnd], u0)
 
 
@@ -268,37 +281,9 @@ if __name__=="__main__":
 
     # finally plot solution.
     plot3d(thetaGrid, timeGrid, firingRate)
-    
-        
-    # velocity is constant so it may be computed using any time instants (after bump is formed)
-    # compute at each as some weirdness can occur. 
-    # this section is used to determine vel givec odd component.
-
-    # your own homemade version, which has some edge case issues:
-    #velocities = np.zeros(len(sol.t) -1)
-    #for i in range(1, len(sol.t)-1):
-    #    bumpVal1 = np.max(firingRate[:, i]) # returns max value at any node, i-th time step
-    #    id1 = np.where(firingRate[:, i] == bumpVal1)[0] # returns index of max theta value.
-    #    bumpVal2 = np.max(firingRate[:, i+1]) # returns max value at any node, i+1st time step
-    #    id2 = np.where(firingRate[:, i+1] == bumpVal2)[0] # index of max theta val. 
-    #    dTheta = x[id2] - x[id1]
-        #if dTheta >= np.pi:
-        #    dTheta = dTheta - 2*np.pi
-        #elif dTheta <= -np.pi:
-        #    dTheta = dTheta + 2*np.pi
-    #    dt = sol.t[i+1] - sol.t[i]
-    #    angSpeed = dTheta/dt
-    #    velocities[i] = angSpeed[0] # can make an array with larger dim.
 
 
-    #print(velocities)
-
-    # final velocity taken to be median. On sample runs,
-    # this seems to be a pretty good way to pick true value.
-    
-    #print(np.mean(velocities))
-    #print("median velocity:", np.median(velocities))
-    
+    # compute velocities to back out how odd component impacts vel.
     vel = np.zeros(len(sol.t) - 1)
     for i in range(1, len(sol.t)-1):
         m1 = pg.circ_mean(x, firingRate[:,i])
@@ -306,11 +291,6 @@ if __name__=="__main__":
         tempVel = (m1 - m2) / (sol.t[i] - sol.t[i+1])
         vel[i] = tempVel
 
-    #`print(vel)
-    #print("Pengouin's median velocity: ", np.median(vel))
-
-    # compute area under weightFunc to measure the oddness of it. 
-    
 
     np.save("data/firingRates.npy", firingRate)
     np.save("data/firingTimes.npy", sol.t)
@@ -318,10 +298,5 @@ if __name__=="__main__":
     matVis(firingRate) 
     
 
-    #plot3d(thetaGrid, timeGrid, sol.y)
     
-    #w = weightMat(x)
-    #matVis(w)
-    #print(w)
-    #eVals, eVecs = np.linalg.eig(w)
-    #np.save("eigVals/eVals.npy", eVals)
+    

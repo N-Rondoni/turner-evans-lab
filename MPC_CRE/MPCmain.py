@@ -21,9 +21,9 @@ def tvp_fun_sim(t_now):
 
 def plotThreeLines(x, y1, y2, y3):
     plt.figure(1)
-    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
-    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
-    plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$')
+    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$ (mol)')
+    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$ (mol)')
+    plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$ (mol)')
     plt.title('Dynamics Derived from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
@@ -35,17 +35,17 @@ def plotThreeLines(x, y1, y2, y3):
 
 def plotFourLines(x, y1, y2, y3, y4):
     plt.figure(2)
-    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
-    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$')
-    plt.plot(x, y3, '--', linewidth = 1, label = r'$CI^{*}$')
-    plt.plot(x, y4, linewidth = 2, label = r'$s$')
+    plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$ (mol)')
+    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$ (mol)')
+    plt.plot(x, y3, '--', linewidth = 1, label = r'$CI^{*}$ (mol)')
+    plt.plot(x, y4, '--', linewidth = 1, label = r'$s$ (Hz)')
     plt.title('Dynamics Derived from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'Concentration', fontsize = 14)
+    plt.ylabel(r'Concentration (mol), Rate (Hz)', fontsize = 14)
     plt.legend()
     filename = 'MPC_fig2_node' + str(row) + '.png'
     plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
    
 
 
@@ -58,12 +58,21 @@ def plotErr(x, y):
     plt.legend()
     filename = 'CRE_fig2_' + str(i) + '.png'
     plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
 
 
 
 if __name__=="__main__":
+    # frequently changed parameters:
+    penalty = 0.01
+    
+    # define initial conditions
+    Ca_0 = 5  #Ca^{2+} [mol/area]?
+    Ci_0 = 50   #CI         
+    CiF_0 = 51  #CI^* #was previously 0, real data readouts start with some concentration.
+    x0 = np.array([Ca_0, Ci_0, CiF_0])
+
     # load in necessary data
     # Load in Dan's flour. data from janelia. Using cond{1}.allFlyData{1}.Strip{2}.RROIavMax
     file_path = 'data/flymat.mat'
@@ -130,7 +139,7 @@ if __name__=="__main__":
     lterm = mterm                                                    # stage cost 
  
     mpc.set_objective(mterm = mterm, lterm = lterm)
-    mpc.set_rterm(s=1) # sets a penalty on changes in s
+    mpc.set_rterm(s = penalty) # sets a penalty on changes in s
 
     # make sure the objective/cost updates with CI_measured and time.    
     tvp_template = mpc.get_tvp_template()
@@ -169,14 +178,9 @@ if __name__=="__main__":
 
     # finally begin closed loop simulation
     
-    # define initial conditions
-    Ca_0 = 50  #Ca^{2+} [mol/area]?
-    Ci_0 = 50   #CI         
-    CiF_0 = 51  #CI^* #was previously 0, real data readouts start with some concentration.
-    x0 = np.array([Ca_0, Ci_0, CiF_0])
-   
+       
     # set for controller, simulator, and estimator
-    mpc.x0 = x0
+    mpc.x0 = x0 #x0 in changable params. 
     simulator.x0 = x0
     estimator.x0 = x0
     mpc.set_initial_guess()
@@ -200,28 +204,63 @@ if __name__=="__main__":
     t_f = mpc.data['_time']
     s = mpc.data['_u']
    
+    print(np.shape(mpc.data['_x']))
+    sol = np.transpose(mpc.data['_x'])
+
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
 
     plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
     plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
 
 
-
-
-
     # check error between Ci_M and Ci_sim
     CI_Meas_interp = np.interp(t_f, timeVec, CI_Meas)
     CI_Meas_interp = CI_Meas_interp[:, 0] # CiF_f different shape
-    print(np.shape(t_f))
-    print(np.shape(CI_Meas_interp))
-    print(np.shape(CiF_f))
-
-
+#    print(np.shape(t_f))
+#    print(np.shape(CI_Meas_interp))
+#    print(np.shape(CiF_f))
     print(np.linalg.norm(CI_Meas_interp - CiF_f))
 
-    print(np.shape((CI_Meas_interp - CiF_f)))
+#    print(np.shape((CI_Meas_interp - CiF_f)))
 
 
     plt.figure(3)    
     plt.plot(t_f, (CI_Meas_interp - CiF_f))
-    plt.show()
+    plt.title(r'Error as a function of time')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'$CI^{*}_{Meas} - CI^*_{Sim}$', fontsize = 14)
+    filename = 'CRE_fig3_' + str(row) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
+    plt.figure(4)
+    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
+    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$')
+    plt.title(r'$CI^{*}$, simulated and measured')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'CI', fontsize = 14)
+    plt.legend()
+    filename = 'CRE_fig4_' + str(row) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
+    plt.figure(5)
+    plt.plot(t_f, s, label=r'$s (Hz)$')
+    plt.title(r'Signal s (maybe Hz)')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'$s$', fontsize = 14)
+    plt.legend()
+    filename = 'CRE_fig5_' + str(row) + '.png'
+    plt.savefig(filename)
+    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
+    np.save('data/s_node_' + str(row), s)
+    np.save('data/t_node_' + str(row), t_f)
+    np.save('data/sol_node_' + str(row), sol)
+
+    
+
+    #plt.show()

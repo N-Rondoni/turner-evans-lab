@@ -86,6 +86,7 @@ if __name__=="__main__":
     imRate = 11.4
     tEnd = n*(1/imRate)
     timeVec = np.linspace(0, tEnd, n)
+
     # short time testing uncomment below ###
     #tEnd = .1
     #nDatPoints = 5
@@ -104,7 +105,7 @@ if __name__=="__main__":
     gamma = 1 
     CI_tot = 20 # total number of available CI molecules? A count or given in moles? Using 100 puts into divergent regieme. 
     # gain coeff
-    kProp = 100
+    kProp = 1000
     kDer = 1
     kInt = 1
     
@@ -247,9 +248,9 @@ if __name__=="__main__":
     plt.figure(7)
     # first create them
     
-    print(sVec[0:10])
-    #plt.scatter(z[1:-1], sVec) #, label = "()"
-    plt.scatter(sol.y, z)
+    #print(sVec[0:10])
+    #plt.scatter(z[1:-1], sVec) #, label = "()" 
+    plt.scatter(sol.y, z) #pointless one is computed with the other.
     plt.title(r"Ordered Pairs $(s, CI^*_{Sim})$")
     plt.xlabel(r"$S$")
     plt.ylabel(r"$CI^*_{Sim}$")
@@ -259,14 +260,39 @@ if __name__=="__main__":
 
     sVec = -kProp*eCurrentSub + -kDer*derVec + -kInt*eSum
  
+    
+    # analyze calcium buildup to back out firing rate?
+    sec = 1
+    Accum = np.zeros(int(np.ceil(sol.t[-1])))
+    runDif = 0
+    tempDif = 0
+    for i in range(len(sol.y[0,:]) - 1):
+        tempDif = sol.y[0, i+1] - sol.y[0, i] 
+        if sol.t[i] < sec:
+            if tempDif > 0:
+                runDif = tempDif + runDif
+        if sol.t[i] > sec:
+            Accum[sec - 1] = runDif
+            runDif = 0
+            sec = sec + 1
+
+    tspanFire = np.linspace(0, np.ceil(sol.t[-1]), len(Accum))
+    
+    plt.figure(8)
+    plt.plot(tspanFire[1:], Accum[1:])
+    
+
+    print(len(Accum))
+    print(len(tspanFire))
+
+    #os.system('rm *.png')
+    #plt.show()
+    
+
     np.save('data/QSSA_s_node_' + str(row), sVec)
     np.save('data/QSSA_t_node_' + str(row), sol.t)
     np.save('data/QSSA_sol_node_' + str(row), sol.y)
-
-
-
-    #os.system('rm *.png')
-    plt.show()
+    np.save('data/QSSA_PosIncreases_node_' + str(row), Accum)
     
 
     #np.save("temp.dat", sol.y[0,:])
