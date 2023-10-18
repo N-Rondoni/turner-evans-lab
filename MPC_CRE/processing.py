@@ -17,9 +17,12 @@ print(np.shape(t))
 print(t[1][-1])
 print(t[-1][0])
 
+m = 9
 firingRates = np.zeros((m, n)) #sub 1 because of the way sVec created
 for i in range(m):
     firingRates[i, :] = np.reshape(np.load('data/s_node_' + str(i) + '.npy'), (700, ))
+
+#print(np.min(firingRates))
 
 #firingRates = np.transpose(firingRates)
 print(np.shape(firingRates))

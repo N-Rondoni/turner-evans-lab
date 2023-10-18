@@ -127,7 +127,10 @@ if __name__=="__main__":
             'n_robust': 1,
             'store_full_solution': True,
             }
-    
+  
+    #mpc.settings.set_linear_solver(solver_name = "MA27") # recommended but bad.
+    mpc.settings.supress_ipopt_output() # supresses output of solver
+
     mpc.set_param(**setup_mpc)
     n_horizon = 6
     t_step = 1/6
@@ -150,8 +153,7 @@ if __name__=="__main__":
     mpc.bounds['lower', '_x', 'Ca'] = 0.0
     mpc.bounds['lower', '_x', 'Ci'] = 0.0
     mpc.bounds['lower', '_x', 'CiF'] = 0.0
-
-    mpc.bounds['lower', '_u', 's'] = - 5 # slow diffusion
+    mpc.bounds['lower', '_u', 's'] = -5 # slow diffusion
 
 
     mpc.setup()
@@ -204,6 +206,7 @@ if __name__=="__main__":
     t_f = mpc.data['_time']
     s = mpc.data['_u']
    
+
     print(np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
