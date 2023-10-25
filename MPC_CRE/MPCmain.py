@@ -108,7 +108,8 @@ if __name__=="__main__":
     kf = 0.0513514
     kr = 7.6 
     alpha = 1
-    gamma = 1
+    gamma = 1   # passive diffusion
+    Ca_ext = 100 # constant extracellular calcium. Constant (assumes external is sink)
     s = model.set_variable('_u', 's')   # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
@@ -168,7 +169,7 @@ if __name__=="__main__":
             'integration_tool': 'cvodes', # look into this
             'abstol': 1e-10,
             'reltol': 1e-10,
-            't_step': 1/6, # (s)
+            't_step': 1/6, # (s) mean step is 6.11368547250401 in data
             }
     simulator.set_param(**params_simulator)
     # account for tvp
@@ -266,4 +267,4 @@ if __name__=="__main__":
 
     
 
-    #plt.show()
+    plt.show()

@@ -11,13 +11,15 @@ m,n = data.shape
 n = np.shape(np.load('data/s_node_1.npy'))[0]
 
 t = np.load('data/t_node_1.npy')
-print(np.shape(t))
+t = np.ndarray.flatten(t)
+
+#print(np.shape(t))
 
 #print(t)
-print(t[1][-1])
-print(t[-1][0])
+#print(t[1][-1])
+#print(t[-1][0])
 
-m = 9
+
 firingRates = np.zeros((m, n)) #sub 1 because of the way sVec created
 for i in range(m):
     firingRates[i, :] = np.reshape(np.load('data/s_node_' + str(i) + '.npy'), (700, ))
@@ -25,13 +27,13 @@ for i in range(m):
 #print(np.min(firingRates))
 
 #firingRates = np.transpose(firingRates)
-print(np.shape(firingRates))
+#print(np.shape(firingRates))
 #showcase what is hopefuly the firing rates
 #print(firingRates)
 
 
 fig1 = plt.figure()
-figMat = plt.imshow(firingRates, extent = [0, t[-1][0], -np.pi, np.pi])
+figMat = plt.imshow(firingRates, extent = [0, t[-1], -np.pi, np.pi])
 plt.title('Heatmap of Firing Rate, MPC', fontsize = 20)
 plt.xlabel(r'Time (s)', fontsize = 14)
 plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
@@ -40,8 +42,58 @@ plt.colorbar(shrink=.20)#location="bottom")
 plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
 
 
+fig1a = plt.figure()
+pFr = np.zeros(np.shape(firingRates))
+# Define the index mapping
+index_mapping = [0, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 8, 16, 9, 17]
+# Copy rows from the input matrix to the new matrix based on the index mapping
+for i in range(np.shape(firingRates)[0]):
+             pFr[i] = firingRates[index_mapping[i]]   
+figMat = plt.imshow(pFr, extent = [0, t[-1], -np.pi, np.pi])
+plt.title('Reordered heatmap of firing rate, MPC', fontsize = 20)
+plt.xlabel(r'Time (s)', fontsize = 14)
+plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
+plt.colorbar(shrink=.20)#location="bottom")
+#the below places ticks at linspace locations, then labels. Extent above determines width.
+plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
 
 
+
+#print(len(firingRates[1,:]))
+#val = np.argmax(firingRates[:, 1])
+#print(firingRates[val, 1])
+#print(np.max(firingRates[:, 1]))
+
+# find location  of maximal firing rate (theta value)
+thetaSpace = np.linspace(-np.pi, np.pi, m)
+thetas = np.zeros(len(firingRates[1,:]))
+for i in range(len(pFr[1,:])):
+    indx = np.argmax(pFr[:, i])
+    thetas[i] = thetaSpace[indx] 
+
+# load in firing rate data from SR solve (moved from singleRing/data)
+firingRatesSR = np.load("data/firingRates_SRmodel.npy")
+firingTimesSR = np.load("data/firingTimes_SRmodel.npy")
+
+m1, n1 = np.shape(firingRatesSR)
+thetaSpace = np.linspace(-np.pi, np.pi, m1)
+thetas1 = np.zeros(len(firingRatesSR[1,:]))
+for i in range(len(firingRatesSR[1,:])):
+    indx = np.argmax(firingRatesSR[:, i])
+    thetas1[i] = thetaSpace[indx] 
+
+#print(np.shape(thetas1))
+#print(np.shape(firingTimesSR))
+#print(firingTimesSR[0], firingTimesSR[-1])
+#print(t[0], t[-1])
+
+
+fig2 = plt.figure()
+plt.plot(t, thetas, label="Maximal location from MPC")
+plt.plot(firingTimesSR, thetas1, label="Maximal location from PDE")
+plt.title("Location of Maximal Firing")
+plt.xlabel("t")
+plt.ylabel(r"$\theta$")
 
 
 
@@ -50,16 +102,7 @@ plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi
 
 
 plt.show()
-
-
-
-
-
-
-
-
-
-
+sys.exit()
 
 
 
@@ -185,6 +228,7 @@ tVals = np.zeros(n)
 tVals = np.load('data/t_node_' + str(0) + '.npy')
 subt = np.zeros(len(tVals) - 1)
 subt = tVals[:-1]
+subt = tVals
 # the above are needed elsewhere, not necessarily for this plot. 
 for i in range(0, 9):
     FfrSub = np.fft.rfft(firingRates[i, subLength:])
