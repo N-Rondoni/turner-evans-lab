@@ -3,13 +3,14 @@ import sys
 import scipy.io
 #import seaborn as sns
 import matplotlib.pyplot as plt
+import pingouin as pg
 
 file_path = 'data/flymat.mat' #must match file in PIDmain.py 
 mat = scipy.io.loadmat(file_path)
 data = mat['flyDat'] #had to figure out why data class is flyDat from print(mat). No clue. 
 m,n = data.shape
 n = np.shape(np.load('data/s_node_1.npy'))[0]
-
+#print(m, n)
 t = np.load('data/t_node_1.npy')
 t = np.ndarray.flatten(t)
 
@@ -24,6 +25,8 @@ firingRates = np.zeros((m, n)) #sub 1 because of the way sVec created
 for i in range(m):
     firingRates[i, :] = np.reshape(np.load('data/s_node_' + str(i) + '.npy'), (700, ))
 
+
+
 #print(np.min(firingRates))
 
 #firingRates = np.transpose(firingRates)
@@ -32,14 +35,15 @@ for i in range(m):
 #print(firingRates)
 
 
-fig1 = plt.figure()
-figMat = plt.imshow(firingRates, extent = [0, t[-1], -np.pi, np.pi])
-plt.title('Heatmap of Firing Rate, MPC', fontsize = 20)
-plt.xlabel(r'Time (s)', fontsize = 14)
-plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
-plt.colorbar(shrink=.20)#location="bottom")
+# reorder for it to make sense, which the below does not do
+#fig1 = plt.figure()
+#figMat = plt.imshow(firingRates, extent = [0, t[-1], -np.pi, np.pi])
+#plt.title('Heatmap of Firing Rate, MPC', fontsize = 20)
+#plt.xlabel(r'Time (s)', fontsize = 14)
+#plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
+#plt.colorbar(shrink=.20)#location="bottom")
 #the below places ticks at linspace locations, then labels. Extent above determines width.
-plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+#plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
 
 
 fig1a = plt.figure()
@@ -48,7 +52,71 @@ pFr = np.zeros(np.shape(firingRates))
 index_mapping = [0, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 8, 16, 9, 17]
 # Copy rows from the input matrix to the new matrix based on the index mapping
 for i in range(np.shape(firingRates)[0]):
-             pFr[i] = firingRates[index_mapping[i]]   
+             pFr[i] = firingRates[index_mapping[i]]  
+pFr = firingRates[index_mapping]
+figMat = plt.imshow(pFr, extent = [0, t[-1], -np.pi, np.pi])
+plt.title('Reordered heatmap of firing rate, MPC', fontsize = 20)
+plt.xlabel(r'Time (s)', fontsize = 14)
+plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
+plt.colorbar(shrink=.20)#location="bottom")
+#the below places ticks at linspace locations, then labels. Extent above determines width.
+plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+
+# find location  of maximal firing rate (theta value)
+thetaSpace = np.linspace(-np.pi, np.pi, m)
+thetas = np.zeros(len(firingRates[1,:]))
+for i in range(len(pFr[1,:])):
+    indx = np.argmax(pFr[:, i])
+    thetas[i] = thetaSpace[indx] 
+
+# attempt to find location of maximal firing rate with circmean
+#x = np.linspace(-np.pi, np.pi, N, endpoint=False)
+print(len(thetaSpace))
+mLoc = np.zeros(len(t))
+for i in range(len(t)):
+    m = pg.circ_mean(thetaSpace, firingRates[:,i])
+    mLoc[i] = m
+
+print(len(mLoc))
+
+# load in firing rate data from SR solve (moved from singleRing/data)
+firingRatesSR = np.load("data/firingRates18Node.npy")
+firingTimesSR = np.load("data/firingTimes18Node.npy")
+
+# the below logic computes maximal theta location, can do better with circmean. 
+m1, n1 = np.shape(firingRatesSR)
+thetaSpace = np.linspace(-np.pi, np.pi, m1)
+thetas1 = np.zeros(len(firingRatesSR[1,:]))
+for i in range(len(firingRatesSR[1,:])):
+    indx = np.argmax(firingRatesSR[:, i])
+    thetas1[i] = thetaSpace[indx] 
+
+
+# attempt to find location of maximal firing rate with circmean
+#x = np.linspace(-np.pi, np.pi, N, endpoint=False)
+print(len(thetaSpace))
+mLoc1 = np.zeros(len(firingTimesSR))
+for i in range(len(firingTimesSR)):
+    m1 = pg.circ_mean(thetaSpace, firingRatesSR[:,i])
+    mLoc1[i] = m1
+
+print(len(mLoc1))
+print(len(firingTimesSR))
+
+fig2 = plt.figure()
+plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)
+plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
+plt.legend()
+plt.title("Location of Maximal Firing")
+plt.xlabel("t")
+plt.ylabel(r"$\theta$")
+
+
+
+fig3 = plt.figure() # MPC heatmap scaled to match that of PDE
+PDEmax = np.max(firingRatesSR)
+MPCmax = np.max(pFr)
+pFr = (PDEmax/MPCmax)*pFr
 figMat = plt.imshow(pFr, extent = [0, t[-1], -np.pi, np.pi])
 plt.title('Reordered heatmap of firing rate, MPC', fontsize = 20)
 plt.xlabel(r'Time (s)', fontsize = 14)
@@ -58,46 +126,15 @@ plt.colorbar(shrink=.20)#location="bottom")
 plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
 
 
-
-#print(len(firingRates[1,:]))
-#val = np.argmax(firingRates[:, 1])
-#print(firingRates[val, 1])
-#print(np.max(firingRates[:, 1]))
-
-# find location  of maximal firing rate (theta value)
-thetaSpace = np.linspace(-np.pi, np.pi, m)
-thetas = np.zeros(len(firingRates[1,:]))
-for i in range(len(pFr[1,:])):
-    indx = np.argmax(pFr[:, i])
-    thetas[i] = thetaSpace[indx] 
-
-# load in firing rate data from SR solve (moved from singleRing/data)
-firingRatesSR = np.load("data/firingRates_SRmodel.npy")
-firingTimesSR = np.load("data/firingTimes_SRmodel.npy")
-
-m1, n1 = np.shape(firingRatesSR)
-thetaSpace = np.linspace(-np.pi, np.pi, m1)
-thetas1 = np.zeros(len(firingRatesSR[1,:]))
-for i in range(len(firingRatesSR[1,:])):
-    indx = np.argmax(firingRatesSR[:, i])
-    thetas1[i] = thetaSpace[indx] 
-
-#print(np.shape(thetas1))
-#print(np.shape(firingTimesSR))
-#print(firingTimesSR[0], firingTimesSR[-1])
-#print(t[0], t[-1])
-
-
-fig2 = plt.figure()
-plt.plot(t, thetas, label="Maximal location from MPC")
-plt.plot(firingTimesSR, thetas1, label="Maximal location from PDE")
-plt.title("Location of Maximal Firing")
-plt.xlabel("t")
-plt.ylabel(r"$\theta$")
-
-
-
-
+fig4 = plt.figure()
+figMat = plt.imshow(firingRatesSR, extent = [0, firingTimesSR[-1], -np.pi, np.pi])
+plt.title('Heatmap of Firing Rate, PDE', fontsize = 20)
+plt.xlabel(r'Time (s)', fontsize = 14)
+plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
+plt.colorbar(shrink=.20)#location="bottom")
+#the below places ticks at linspace locations, then labels. Extent above determines width.
+plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+    
 
 
 

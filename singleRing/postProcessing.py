@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # plot firing rates as heatmap
     firingRate = np.load("data/firingRates.npy") 
     firingTimes = np.load("data/firingTimes.npy") # is sol.t in updatedVelocity.py
-    #print(len(firingTimes))
+    print(len(firingTimes))
     print(np.shape(firingRate))
 
     matVis(firingRate)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     
     error =(1/len(velInterp))*(velInterp - realVel)**2
     
-    print("Mean Square Error:", np.sum(error)) # velocities a bit off. 
+    print("Mean Square Error:", np.linalg.norm(error)) # velocities a bit off. 
 
 
     #  check location of bump (where firing rate is maximal)

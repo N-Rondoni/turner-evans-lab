@@ -73,7 +73,7 @@ def weightFunc2(x, t):
     
     # update odd portion with velocity. Found by noting each scalar multiple of odd out scales vel accordingly.
     # Eg., want 1 odd out to yield vel of 6.2 
-    velAn = -gamma / Tau # from paper, analytic expression for angular vel. In rad/ms currently. 
+    velAn = gamma / Tau # from paper, analytic expression for angular vel. In rad/ms currently. 
     velAn = velAn * 1000 # contert to seconds
     scalarMult = (1/velAn)*velInterp 
     #(1/6.294898346736869)*velInterp
@@ -218,13 +218,25 @@ def matVis(A):
     plt.title("Visualization of Weight Matrix", fontsize = 20)
     plt.show()
     
-
+def matVisPos(A):
+    vmax = np.max(A)
+    vmin = np.min(A)  
+    norm = colors.TwoSlopeNorm(vmin=vmin, vcenter = (vmin + vmax)/2, vmax = vmax) # centers colorbar around 0
+    plt.matshow(A, extent = [-np.pi, np.pi, np.pi, -np.pi], cmap='bwr', norm=norm)
+    plt.xticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+    plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+    plt.xlabel(r'$\theta$', fontsize = 14)
+    plt.ylabel(r'$\theta$', fontsize = 14)
+    plt.colorbar()
+    plt.title("Visualization of S Matrix", fontsize = 20)
+    plt.show()
+ 
 ## End Plotting Functions ## -------------------------------------
 
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 48
+    N = 18
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
@@ -265,12 +277,13 @@ if __name__=="__main__":
     tEnd = timeVec[-1]     # this also reshapes
     #tEnd = 3.5             # uncomment for faster testing
 
-    # temp plotting
-    w = weightMat(x, 0)
-    matVis(w)
     
-    w = weightMat(x, 100)
-    matVis(w)
+    # temp plotting
+    #w = weightMat(x, 0)
+    #matVis(w)
+    
+    #w = weightMat(x, 100)
+    #matVis(w)
     ##
 
     sol = solve_ivp(sys, [0, tEnd], u0)
@@ -305,7 +318,7 @@ if __name__=="__main__":
     np.save("data/velSim.npy", vel)
     
 
-    matVis(firingRate) 
+    matVisPos(firingRate) 
     
 
     

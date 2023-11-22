@@ -113,7 +113,7 @@ if __name__=="__main__":
     s = model.set_variable('_u', 's')   # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
-    model.set_rhs('Ca', alpha*s - gamma*Ca + kr*CiF - kf*Ci*Ca)
+    model.set_rhs('Ca', alpha*s - gamma*(Ca - Ca_ext) + kr*CiF - kf*Ci*Ca)
     model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
     model.set_rhs('CiF', kf*Ci*Ca - kr*CiF)
    
