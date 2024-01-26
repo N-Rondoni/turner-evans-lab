@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import pingouin as pg
 
 state = 'Stripe'
-state1 = 'Dark'
+#state = 'Dark'
 
-file_path = 'data/ciDat' + state + 'Dark.mat' #must match file in PIDmain.py 
+file_path = 'data/ciDat' + state + '.mat' #must match file in PIDmain.py 
 mat = scipy.io.loadmat(file_path)
 data = mat['ciDat' + state] #had to figure out why data class is flyDat from print(mat). No clue. 
 m,n = data.shape
@@ -31,14 +31,14 @@ for i in range(np.shape(firingRates)[0]):
              pFr[i] = firingRates[index_mapping[i]]  
 # create permuted firing rate, pFr
 pFr = firingRates[index_mapping]
-# finally, plot
-figMat = plt.imshow(pFr, extent = [0, t[-1], -np.pi, np.pi])
-plt.title('Reordered heatmap of firing rate, MPC', fontsize = 20)
-plt.xlabel(r'Time (s)', fontsize = 14)
-plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
-plt.colorbar(shrink=.20)#location="bottom")
+# finally, plot (later)
+#figMat = plt.imshow(pFr, extent = [0, t[-1], -np.pi, np.pi])
+#plt.title('Reordered heatmap of firing rate, MPC, ' + state, fontsize = 20)
+#plt.xlabel(r'Time (s)', fontsize = 14)
+#plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
+#plt.colorbar(shrink=.20)#location="bottom")
 #the below places ticks at linspace locations, then labels. Extent above determines width.
-plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
+#plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
 
 # find location  of maximal firing rate (theta value)
 thetaSpace = np.linspace(-np.pi, np.pi, m)
@@ -47,12 +47,18 @@ for i in range(len(pFr[1,:])):
     indx = np.argmax(pFr[:, i])
     thetas[i] = thetaSpace[indx] 
 
-# attempt to find location of maximal firing rate with circmean
+# attempt to find location of maximal firing rate in MPC with circmean
 #x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 print(len(thetaSpace))
 mLoc = np.zeros(len(t))
 for i in range(len(t)):
-    m = pg.circ_mean(thetaSpace, firingRates[:,i])
+#    m = pg.circ_mean(thetaSpace, firingRates[:,i])
+    m = pg.circ_mean(thetaSpace, pFr[:,i])
+    vecLength = pg.circ_r(thetaSpace, pFr[:,i])
+    #print(vecLength)
+    #if vecLength > 0.95:
+    #    m1 = mLoc1[i-1]
+    #print(t[i], vecLength, m1)
     mLoc[i] = m
 
 print(len(mLoc))
@@ -76,18 +82,19 @@ print(len(thetaSpace))
 mLoc1 = np.zeros(len(firingTimesSR))
 for i in range(len(firingTimesSR)):
     m1 = pg.circ_mean(thetaSpace, firingRatesSR[:,i])
+    #    print(m1)
     mLoc1[i] = m1
 
-print("m1:", len(mLoc1))
-print(len(firingTimesSR))
+#print("m1:", len(mLoc1))
+#print(len(firingTimesSR))
 
-fig2 = plt.figure()
-plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)
-plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
-plt.legend()
-plt.title("Location of Maximal Firing")
-plt.xlabel("t")
-plt.ylabel(r"$\theta$")
+#fig2 = plt.figure()
+#plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)
+#plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
+#plt.legend()
+#plt.title("Location of Maximal Firing")
+#plt.xlabel("t")
+#plt.ylabel(r"$\theta$")
 
 
 
@@ -96,7 +103,7 @@ PDEmax = np.max(firingRatesSR)
 MPCmax = np.max(pFr)
 pFr = (PDEmax/MPCmax)*pFr
 figMat = plt.imshow(pFr, extent = [0, t[-1], -np.pi, np.pi])
-plt.title('Reordered heatmap of firing rate, MPC', fontsize = 20)
+plt.title('Heatmap of firing rate, MPC, ' + state, fontsize = 20)
 plt.xlabel(r'Time (s)', fontsize = 14)
 plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
 plt.colorbar(shrink=.20)#location="bottom")
@@ -106,7 +113,7 @@ plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi
 
 fig4 = plt.figure()
 figMat = plt.imshow(firingRatesSR, extent = [0, firingTimesSR[-1], -np.pi, np.pi])
-plt.title('Heatmap of Firing Rate, PDE', fontsize = 20)
+plt.title('Heatmap of Firing Rate, PDE, ' + state, fontsize = 20)
 plt.xlabel(r'Time (s)', fontsize = 14)
 plt.ylabel(r'HD Cell $\theta$', fontsize = 14)
 plt.colorbar(shrink=.20)#location="bottom")
@@ -126,13 +133,24 @@ ax.grid(True)
 fig6 = plt.figure()
 unwrapFr = np.unwrap(mLoc)
 unwrapFrSr = np.unwrap(mLoc1)
-plt.plot(t, unwrapFr, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)
+unwrapFrRough = np.unwrap(thetas)
+plt.plot(t, unwrapFr, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)i
 plt.plot(firingTimesSR, unwrapFrSr, label="Maximal location from PDE")
+#plt.plot(t, unwrapFrRough, label="max loc without circmean") # do not need, circmean does good
 plt.legend()
-plt.title("Location of Maximal Firing, Unwrapped", fontsize = 20)
+plt.title("Location of Maximal Firing, Unwrapped, " + state, fontsize = 20)
 plt.xlabel("t")
 plt.ylabel(r"$\theta$")
 
+
+fig7 = plt.figure()
+plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)i
+plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
+#plt.plot(t, thetas, label="max loc without circmean")
+plt.legend()
+plt.title("Location of Maximal Firing, Unwrapped, " + state, fontsize = 20)
+plt.xlabel("t")
+plt.ylabel(r"$\theta$")
 
 
 

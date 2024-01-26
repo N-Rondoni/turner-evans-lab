@@ -170,15 +170,20 @@ def initialCondFlat(x):
 
 
 def initialCondBias(x):
-    # could do better here
-    # instead of if, find closes and set to 1
+    # sets initial coniditon to match that of CI data
+    file_path = 'data/ciDat' + state + '.mat'
+    mat = scipy.io.loadmat(file_path)
+    data = mat['ciDat' + state] 
+    # pull out location maximal activity for ICs to match
+    ciMaxLoc = np.argmax(data[:,0])
+
     IC = np.zeros(len(x))
     for i in range(len(x)):
         IC[i] = 1
         # constant comes from matlab exploration
         # examaine real world data for bump loc
-        if np.isclose(x[i], -2.0328, atol = 1E-1):
-            IC[i] = 2
+        if i == ciMaxLoc:
+            IC[i] = 3
     return IC
 
 ## Plotting functions ##  -------------------------------------
@@ -237,6 +242,11 @@ def matVisPos(A):
 if __name__=="__main__":
     # set number of spatial discretizations
     N = 18
+
+    # pull from data set with stripe or in dark
+    state = 'Stripe'
+    #state = 'Dark'
+
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
@@ -255,9 +265,6 @@ if __name__=="__main__":
     Tau = 10
     
     
-    state = 'Stripe'
-    #state = 'Dark'
-
     ''' -------------------------------
     End changable parameters. 
     '''
@@ -311,7 +318,7 @@ if __name__=="__main__":
         firingRate[:, i] = sigma(sol.y[:, i])      # what the author's use.
 
     # finally plot solution.
-    plot3d(thetaGrid, timeGrid, firingRate)
+ #   plot3d(thetaGrid, timeGrid, firingRate)
 
 
     np.save('data/PDEfiringRates' + state + '.npy', firingRate)
@@ -319,7 +326,7 @@ if __name__=="__main__":
 
     
 
-    matVisPos(firingRate) 
+#    matVisPos(firingRate) 
     
 
     

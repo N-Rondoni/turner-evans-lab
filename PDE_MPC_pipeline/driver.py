@@ -10,6 +10,8 @@ mat = scipy.io.loadmat(file_path)
 data = mat['ciDat'+ state] #had to figure out why data class is flyDat from print(mat). No clue. 
 m,n = data.shape
 
+os.system("python3 PDEanalyticVelocitySR.py")
+
 for i in range(m):
     #print(('python PIDmain.py ' + str(i)))
     os.system('python3 MPCmain.py ' + str(i))

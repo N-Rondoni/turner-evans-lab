@@ -27,7 +27,7 @@ def matVis(A):
 
 if __name__ == "__main__":
     state = 'Stripe'
-    state1 = 'Dark'
+    #state = 'Dark'
 
 
     # plot firing rates as heatmap

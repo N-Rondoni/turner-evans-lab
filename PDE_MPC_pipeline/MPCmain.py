@@ -65,7 +65,7 @@ def plotErr(x, y):
 if __name__=="__main__":
     # frequently changed parameters:
     state = 'Stripe'
-    state1 = 'Dark'
+    #state = 'Dark'
 
     penalty = 0.01
     
