@@ -2,8 +2,8 @@ import os
 import sys
 import scipy.io
 
-state = 'Stripe'
-#state = 'Dark'
+#state = 'Stripe'
+state = 'Dark'
 
 file_path = 'data/ciDat' + state + '.mat' #must match file in PIDmain.py 
 mat = scipy.io.loadmat(file_path)

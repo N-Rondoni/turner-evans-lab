@@ -64,8 +64,8 @@ def plotErr(x, y):
 
 if __name__=="__main__":
     # frequently changed parameters:
-    state = 'Stripe'
-    #state = 'Dark'
+    #state = 'Stripe'
+    state = 'Dark'
 
     penalty = 0.01
     
@@ -113,7 +113,7 @@ if __name__=="__main__":
     gamma = 1   # passive diffusion
     Ca_ext = 100 # constant extracellular calcium. Constant (assumes external is sink)
     s = model.set_variable('_u', 's')   # control variable ( input )
-    CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
+    CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter
 
     model.set_rhs('Ca', alpha*s - gamma*(Ca - Ca_ext) + kr*CiF - kf*Ci*Ca)
     model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
@@ -264,4 +264,4 @@ if __name__=="__main__":
 
     
 
-    #plt.show()
+    plt.show()

@@ -10,7 +10,8 @@ from scipy.integrate import solve_ivp
 import scipy.io
 import pingouin as pg
 import os
-   
+rng = np.random.default_rng(seed=42) # fix a random seed for replicability
+
 def tuningCurve(x):
     A = 2.53
     k = 8.08 
@@ -75,9 +76,9 @@ def weightFunc2(x, t):
     # Eg., want 1 odd out to yield vel of 6.2 
     velAn = gamma / Tau # from paper, analytic expression for angular vel. In rad/ms currently. 
     velAn = velAn * 1000 # contert to seconds
-    scalarMult = (1/velAn)*velInterp 
+    scalarMult = (1.5/velAn)*velInterp  #1.5 due to 240 deg -> 360 deg mapping.
     #(1/6.294898346736869)*velInterp
-
+    print(scalarMult)
 #    print(velInterp)
 #    print(velAn)
 
@@ -119,7 +120,8 @@ def sigma(s):
 
 def linRect(s):
     # here is a more modern correction function. Graphs are the same essentially
-    #     if soln is passed in at end. Cannot be used in sys tho. 
+    #     if soln is passed in at end. Cannot be used in sys tho, 
+    #     this is because ReLu is non differentiable at x = 0.
     out = np.zeros(len(s))
     for i in range(len(s)):
         if s[i] > 0:
@@ -183,8 +185,35 @@ def initialCondBias(x):
         # constant comes from matlab exploration
         # examaine real world data for bump loc
         if i == ciMaxLoc:
+            IC[i] = 3 
+    return IC
+
+def initialCondBiasMean(x):
+    # sets initial coniditon to match that of CI data
+    file_path = 'data/ciDat' + state + '.mat'
+    mat = scipy.io.loadmat(file_path)
+    data = mat['ciDat' + state] 
+    # pull out location maximal activity for ICs to match
+    ciMaxLoc = pg.circ_mean(x, data[:, 0])
+
+    IC = np.zeros(len(x))
+    for i in range(len(x)):
+        IC[i] = 1
+        if np.isclose(x[i], ciMaxLoc):
             IC[i] = 3
     return IC
+
+
+def hardCodeIC(x):
+    # when you can't bias the IC based of CI data, can just hardcode it to agree more after seeing MPC result.
+    IC = np.zeros(len(x))
+    hardCode = -np.pi/2
+    for i in range(len(x)):
+        IC[i] = 1
+        IC[4] = 3
+    return IC
+
+
 
 ## Plotting functions ##  -------------------------------------
 def plot3d(x, y, z):
@@ -244,8 +273,8 @@ if __name__=="__main__":
     N = 18
 
     # pull from data set with stripe or in dark
-    state = 'Stripe'
-    #state = 'Dark'
+    #state = 'Stripe'
+    state = 'Dark'
 
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
@@ -260,6 +289,10 @@ if __name__=="__main__":
     #u0 = initialCondRand(x)
     #u0 = initialCondFlat(x)
     u0 = initialCondBias(x)
+    #u0 = hardCodeIC(x)
+    #u0 = initialCondBiasMean(x)
+    
+    print(u0)
 
     # define time constant
     Tau = 10

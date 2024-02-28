@@ -5,8 +5,8 @@ import scipy.io
 import matplotlib.pyplot as plt
 import pingouin as pg
 
-state = 'Stripe'
-#state = 'Dark'
+#state = 'Stripe'
+state = 'Dark'
 
 file_path = 'data/ciDat' + state + '.mat' #must match file in PIDmain.py 
 mat = scipy.io.loadmat(file_path)
@@ -40,7 +40,7 @@ pFr = firingRates[index_mapping]
 #the below places ticks at linspace locations, then labels. Extent above determines width.
 #plt.yticks(np.linspace(-np.pi, np.pi, 5), [r'$-\pi$', r'$-\pi/2$',r'$0$', r'$\pi/2$', r'$\pi$'])
 
-# find location  of maximal firing rate (theta value)
+# find location  of maximal firing rate (theta value) DOES WAY WORSE THAN CIRCMEAN, TOO SENSITIVE
 thetaSpace = np.linspace(-np.pi, np.pi, m)
 thetas = np.zeros(len(firingRates[1,:]))
 for i in range(len(pFr[1,:])):
