@@ -61,7 +61,6 @@ for i in range(len(t)):
     #print(t[i], vecLength, m1)
     mLoc[i] = m
 
-print(len(mLoc))
 
 # load in firing rate data from SR solve (moved from singleRing/data)
 firingRatesSR = np.load('data/PDEfiringRates' + state + '.npy')
@@ -143,6 +142,7 @@ plt.xlabel("t")
 plt.ylabel(r"$\theta$")
 
 
+
 fig7 = plt.figure()
 plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)i
 plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
@@ -152,6 +152,11 @@ plt.title("Location of Maximal Firing, Unwrapped, " + state, fontsize = 20)
 plt.xlabel("t")
 plt.ylabel(r"$\theta$")
 
+
+# compute difference between mean locations. Will need to use this info in PDE solve to make things line up.
+# different lengths so we must interp
+locDif = mLoc - np.interp(t, firingTimesSR, mLoc1)
+#np.save('data/locDif' + state + '.npy', locDif) ######################################## remember to uncomment for more testing
 
 
 

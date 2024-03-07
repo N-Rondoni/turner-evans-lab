@@ -71,12 +71,13 @@ def weightFunc2(x, t):
 
     # interpolate velocities to match times
     velInterp = np.interp(t, timeVec, realVel)
-    
+    locDifInterp = np.interp(t, np.linspace(0, tEnd, len(locDif)), locDif)
+
     # update odd portion with velocity. Found by noting each scalar multiple of odd out scales vel accordingly.
     # Eg., want 1 odd out to yield vel of 6.2 
     velAn = gamma / Tau # from paper, analytic expression for angular vel. In rad/ms currently. 
     velAn = velAn * 1000 # contert to seconds
-    scalarMult = (1.5/velAn)*velInterp  #1.5 due to 240 deg -> 360 deg mapping.
+    scalarMult = ((1.5+locDifInterp)/velAn)*velInterp  #1.5 due to 240 deg -> 360 deg mapping.
     
 
     totalOut = evenOut + scalarMult*oddOut
@@ -326,13 +327,13 @@ if __name__=="__main__":
     realVel = np.zeros(m)
     realVel = temp[:, 0]
     #print(m,n)
-    print(realVel)
+    #print(realVel)
 
-    # noise the velocities in the dark case
-    if state == 'Stripe':
+    # noise the velocities in the sripe
+#    if state == 'Stripe':
 #        velNoise = -1*np.random.uniform(0, 0.5, np.shape(realVel)) #uniformly sample [0, 0.5)
-        velNoise = -1*np.random.normal(0.3, 0.2, np.shape(realVel)) # mean 0.4, sd 0.2
-        realVel = realVel + velNoise
+#        velNoise = -1*np.random.normal(0.3, 0.2, np.shape(realVel)) # mean 0.4, sd 0.2
+#        realVel = realVel + velNoise
     
 
 
@@ -349,7 +350,20 @@ if __name__=="__main__":
     tEnd = timeVec[-1]     # this also reshapes
     #tEnd = 3.5             # uncomment for faster testing
 
-    
+    # load in locDif, requires driver to run all the way through 
+    # ( must hit proccessing file to be created)
+    file_path3 = 'data/locDif' + state + '.npy'    
+    locDif = np.load(file_path3)
+    # convert locDif to percentage of ring
+    locDif = locDif/np.pi
+    #print(locDif)
+    #print(np.shape(locDif))
+
+    print(np.shape(timeVec))
+    print(np.shape(locDif))
+
+
+
     # temp plotting
     #w = weightMat(x, 0)
     #matVis(w)
