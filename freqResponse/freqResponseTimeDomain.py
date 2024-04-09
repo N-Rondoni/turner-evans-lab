@@ -8,13 +8,25 @@ import os
 import sys
 import time
 
-def impulse(t):
-    T = 1
-    A = 1
-    signal = np.sin(t)
+def impulseSine(t):
+    T = 3
+    A = 10
+    signal = A*np.abs(np.sin(np.pi*t/T))
     return signal
 
 
+def impulseSaw(t):
+    # can only be called on a single element
+    A = 1
+    T = 5
+    if t % T < T/2:        
+        signal = 2*A*t/T
+    if t % T >= T/2:
+        signal = A - 2*A*t/T
+    return signal
+
+#def impulseSquare(t):
+#    T = 5
 
 
 def CRN(t, A):
@@ -35,7 +47,7 @@ def CRN(t, A):
     # define chemical master equation 
     # this is the RHS of the system     
     
-    s = impulse(t)
+    s = impulseSine(t)
 
     du = [alpha*s - gamma*x + kr*z - kf*x*(L-z), # + beta 
         kf*x*(L-z) - kr*z] 
@@ -44,10 +56,11 @@ def CRN(t, A):
 
 
 if __name__=="__main__":
+
     n = 1000
     imRate = 11.4
     tEnd = n*(1/imRate)
-    tEnd = 100
+    tEnd = 20
     timeVec = np.linspace(0, tEnd, n)
     tsolve = [0, tEnd]
 
@@ -77,10 +90,14 @@ if __name__=="__main__":
     
     print(sol.y.shape)
   
-
-    plt.figure()
+    # plot signal, response in both state variables
     fig, axs = plt.subplots(1, 3)
-    axs[0].plot(sol.t, impulse(sol.t))
+    # plots sawtooth impulse, use this format for things called on individal time moments.
+    #pulse = np.zeros(len(sol.t))
+    #for i in range(len(sol.t)):
+    #    pulse[i] = impulseSaw(sol.t[i])
+    #axs[0].plot(sol.t, pulse)
+    axs[0].plot(sol.t, impulseSine(sol.t)) # plots sine impulse
     axs[0].set_xlabel(r'$t$', fontsize = 16)
     axs[0].set_ylabel(r'Impulse', fontsize=16)
     
@@ -94,110 +111,7 @@ if __name__=="__main__":
     
 
 
-    plt.show()
-    sys.exit()
-
-
-    # plot 3 values solved for in CRE
-    plt.figure(1)
-    y1 = sol.y[0,:]
-    print(y1[0:10])
-    y2 = sol.y[1,:] 
-    y3 = sol.y[2,:]
-    plt.plot(sol.t, y1, '--', linewidth = 1, label = r'$Ca^{2+}$')
-    plt.plot(sol.t, y2, '--', linewidth = 1, label = r'$CI$')
-    plt.plot(sol.t, y3, linewidth = 2, label = r'$CI^{*}$')
-    plt.title('Dynamics Derived from CRN', fontsize = 18)
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'Concentration', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig1_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-    # plot error across time
-    plt.figure(2)
-    plt.plot(sol.t, -1*eCurrent, label = r'$Error$')
-    plt.title('Dynamics of Error as a function of time', fontsize = 18)
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'Error', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig2_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-
-    # Additional Plotting, this is the guts of plotS
-    #plot firing rate
-    plt.figure(3)
-    plt.plot(subt, sVec, label = r'$S$')
-    plt.title('Dynamics of S backsolved from CRN', fontsize = 18)
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'S (hz)', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig3_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-    
-    #plot subset of firing rate
-    plt.figure(4)
-    plt.plot(subt[:200], sVec[:200], label = r'$S$')
-    plt.title('Subset of time, Dynamics of S backsolved from CRN', fontsize = 18)
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'S (hz)', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig4_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-    
-    #plotS(subt, derVec)
-    plt.figure(5)
-    plt.plot(subt, derVec, label = r'$S$')
-    plt.title('Dynamics of derivative of Error', fontsize = 18)
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'$\dot{e}$', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig5_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-   #plt.show() 
-
-    # plot measured vs simulated CI^*
-    plt.figure(6)
-    plt.plot(sol.t, CI_Meas, label=r'$CI^{*}_{Meas}$')
-    plt.plot(sol.t, sol.y[2,:], label=r'$CI^{*}_{Sim}$')
-    plt.title(r'$CI^{*}$, simulated and measured')
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'CI', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig6_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-    #plot Ca^{2+} seperately as concentrations are too low to see when plotted together
-    plt.figure(7)
-    plt.plot(sol.t, sol.y[0,:])#, label = r'$Ca^{2+}$')
-    plt.title(r'Dynamics of $Ca^{2+}$')
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'$Ca^{2+}$', fontsize = 14)
-    filename = 'CRE_fig7_' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-    #np.save('data/s_node_' + str(row), sVec)
-    #np.save('data/t_node_' + str(row), sol.t)
-    #np.save('data/sol_node_' + str(row), sol.y)
-
 
     plt.show()
 
 
-    #np.save("temp.dat", sol.y[0,:])
-    
-    #plt.figure(6)
-    #plt.figure(6)
-    #print(sol.y)
-    #print(tEvals.shape, S.shape)
-    #print(tEvals)
-    #print((sol.y).shape)
