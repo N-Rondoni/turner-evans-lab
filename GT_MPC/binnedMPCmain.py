@@ -10,6 +10,8 @@ import time
 import do_mpc
 from casadi import *
 import pandas as pd
+from spikeCounter import spikeCounter
+
 
 
 def tvp_fun(t_now):
@@ -31,8 +33,8 @@ def plotThreeLines(x, y1, y2, y3):
     plt.ylabel(r'Concentration', fontsize = 14)
     plt.legend()
     filename = 'MPC_fig1_node' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
+    #plt.savefig(filename)
+    #os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/CRE_across_nodes/') # only run with this line uncommented if you are Nick
   
 
 def plotFourLines(x, y1, y2, y3, y4):
@@ -46,8 +48,8 @@ def plotFourLines(x, y1, y2, y3, y4):
     plt.ylabel(r'Concentration (mol), Rate (Hz)', fontsize = 14)
     plt.legend()
     filename = 'MPC_fig2_node' + str(row) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+    #plt.savefig(filename)
+    #os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
    
 
 
@@ -59,8 +61,8 @@ def plotErr(x, y):
     plt.ylabel(r'Error', fontsize = 14)
     plt.legend()
     filename = 'CRE_fig2_' + str(i) + '.png'
-    plt.savefig(filename)
-    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+    #plt.savefig(filename)
+    #os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
 
 
@@ -160,7 +162,7 @@ if __name__=="__main__":
     #mpc.bounds['lower', '_x', 'Ca'] = 0.0
     #mpc.bounds['lower', '_x', 'Ci'] = 0.0
     #mpc.bounds['lower', '_x', 'CiF'] = 0.0
-    mpc.bounds['lower', '_u', 's'] = -5 # slow diffusion
+    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
 #    mpc.bounds['upper', '_u', 's'] = 100
    
     # once mpc.setup() is called, no model parameters can be changed.
@@ -271,6 +273,8 @@ if __name__=="__main__":
     mSpike,nSpike = spikeDat.shape
 
     spikeDat = spikeDat[row, :]
+    spikeDat = spikeCounter(spikeDat, 5)
+
     # finally scale so viewing is more clear
     s = (np.max(spikeDat)/np.max(s))*s
 
