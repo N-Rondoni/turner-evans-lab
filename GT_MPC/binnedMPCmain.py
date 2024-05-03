@@ -77,14 +77,14 @@ if __name__=="__main__":
     
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
-    subsetAmount = 2000
+    subsetAmount = 4000
     data1 = data1[:, :subsetAmount]
     m,n = data1.shape
 
     row = 1
     #row = int(sys.argv[1]) 
     CI_Meas = data1[row, :] # looks at a single neuron.  
-    CI_Meas = 50*CI_Meas
+    #CI_Meas = 50*CI_Meas
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
@@ -93,7 +93,7 @@ if __name__=="__main__":
 
     # define initial conditions
     Ca_0 = 5  #Ca^{2+} [mol/area]?
-    Ci_0 = 70   #CI         
+    Ci_0 = 7   #CI         
     CiF_0 = CI_Meas[0]  #CI^* #was previously 0, real data readouts start with some concentration.
     x0 = np.array([Ca_0, Ci_0, CiF_0])
 
@@ -212,7 +212,7 @@ if __name__=="__main__":
     s = mpc.data['_u']
    
 
-    print(np.shape(mpc.data['_x']))
+    #print(np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
@@ -273,17 +273,26 @@ if __name__=="__main__":
     mSpike,nSpike = spikeDat.shape
 
     spikeDat = spikeDat[row, :]
-    spikeDat = spikeCounter(spikeDat, 5)
+    spikeDat, binSizeTime = spikeCounter(spikeDat, 4)
 
     # finally scale so viewing is more clear
     s = (np.max(spikeDat)/np.max(s))*s
+
+    # compute correlation coefficient
+    #print(np.shape(s[:,0]), np.shape(spikeDat))
+    #print(np.shape(t_f), np.shape(timeVec))
+    interpS = np.interp(timeVec, t_f[:,0], s[:,0])
+    corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
+
+    print(corrCoef)
+
 
     plt.figure(6)
     plt.plot(t_f, s, label=r'Simulated Rate')
     plt.plot(timeVec, spikeDat, label="Recorded Spike")
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$s$', fontsize = 14)
-    plt.title("Expected and Recorded spikes")
+    plt.title("Expected and Recorded spikes, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
 
     np.save('data/s_node_' + str(row), s)
