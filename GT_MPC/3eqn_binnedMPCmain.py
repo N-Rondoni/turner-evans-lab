@@ -11,10 +11,8 @@ import do_mpc
 from casadi import *
 import pandas as pd
 from spikeCounter import spikeCounter
-import seaborn as sns
-from datetime import date
-import spikefinder_eval as se
-from spikefinder_eval import _downsample
+
+
 
 def tvp_fun(t_now):
     for k in range(n_horizon + 1):
@@ -79,29 +77,25 @@ if __name__=="__main__":
     
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
-    subsetAmount = np.max(np.shape(data1)) # the way its set up, must be divisble by factor or stuff breaks. 
-    subsetAmount = 8000
+    subsetAmount = 4000
     data1 = data1[:, :subsetAmount]
     m,n = data1.shape
-    print(data1)
 
-
-    row = 2
+    row = 1
     #row = int(sys.argv[1]) 
     CI_Meas = data1[row, :] # looks at a single neuron.  
     #CI_Meas = 50*CI_Meas
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
-    print("Simulating until final time", tEnd, "seconds, consisting of", n, "data points")
     timeVec = np.linspace(0, tEnd, n)
     
 
     # define initial conditions
     Ca_0 = 5  #Ca^{2+} [mol/area]?
-#    Ci_0 = 7   #CI         
+    Ci_0 = 7   #CI         
     CiF_0 = CI_Meas[0]  #CI^* #was previously 0, real data readouts start with some concentration.
-    x0 = np.array([Ca_0, CiF_0])
+    x0 = np.array([Ca_0, Ci_0, CiF_0])
 
 
     # follow MPC example ``batch bioreactor`` on do-mpc website
@@ -111,7 +105,7 @@ if __name__=="__main__":
     # states struct, optimization variables
     # S is an unknown parameter. _x denotes var, _p param?
     Ca = model.set_variable('_x', 'Ca')
-#    Ci = model.set_variable('_x', 'Ci') #
+    Ci = model.set_variable('_x', 'Ci') #
     CiF = model.set_variable('_x', 'CiF')
 
     # define ODEs and parameters, kr << kf
@@ -119,13 +113,13 @@ if __name__=="__main__":
     kr = 7.6 
     alpha = 1
     gamma = 1   # passive diffusion
-    L = CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-    s = model.set_variable('_u', 's')         # control variable ( input )
+    Ca_ext = 100 # constant extracellular calcium. Constant (assumes external is sink). UNUSED.
+    s = model.set_variable('_u', 's')   # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
-    model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ca*(L - CiF))
-#   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
-    model.set_rhs('CiF', kf*Ca*(L - CiF) - kr*CiF)
+    model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ci*Ca)
+    model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
+    model.set_rhs('CiF', kf*Ci*Ca - kr*CiF)
    
     model.setup()
     mpc = do_mpc.controller.MPC(model)
@@ -134,7 +128,7 @@ if __name__=="__main__":
     # does not impact my actual horizon or stepsize for simulation? 
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
-            't_step': 1/59.1, # (s)
+            't_step': 1/60, # (s)
             'n_robust': 1,
             'store_full_solution': True,
             }
@@ -144,7 +138,7 @@ if __name__=="__main__":
 
     mpc.set_param(**setup_mpc)
     n_horizon = 6
-    t_step = 1/59.1
+    t_step = 1/60
     n_robust = 1
 
 #    print(model.u.keys())
@@ -184,7 +178,7 @@ if __name__=="__main__":
             'integration_tool': 'cvodes', # look into this
             'abstol': 1e-10,
             'reltol': 1e-10,
-            't_step': 1/59.1, # (s) mean step is 6.11368547250401 in data
+            't_step': 1/60, # (s) mean step is 6.11368547250401 in data
             }
     simulator.set_param(**params_simulator)
     # account for tvp
@@ -212,14 +206,13 @@ if __name__=="__main__":
 
     # pull final solutions for ease of use
     Ca_f = mpc.data['_x'][:, 0]
-#    Ci_f = mpc.data['_x'][:, 1]
-    CiF_f = mpc.data['_x'][:, 1]
+    Ci_f = mpc.data['_x'][:, 1]
+    CiF_f = mpc.data['_x'][:, 2]
     t_f = mpc.data['_time']
     s = mpc.data['_u']
    
-    Ci_f = L - CiF_f
 
-    print(np.shape(mpc.data['_x']))
+    #print(np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
@@ -279,44 +272,33 @@ if __name__=="__main__":
     spikeDat = spikeDat[:, :subsetAmount]
     mSpike,nSpike = spikeDat.shape
 
-    spikeDatRaw = spikeDat[row, :]
-    factor = 4
-    spikeDat = _downsample(spikeDatRaw, 4)
-    s = _downsample(s, 4)
-#    spikeDat, binSizeTime = spikeCounter(spikeDatRaw, 4)
+    spikeDat = spikeDat[row, :]
+    spikeDat, binSizeTime = spikeCounter(spikeDat, 4)
 
     # finally scale so viewing is more clear
-    #s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
+    s = (np.max(spikeDat)/np.max(s))*s
 
     # compute correlation coefficient
-    #print(np.shape(s))
-    #print(np.shape(t_f[::factor,0]))
-    interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
-    #print(np.shape(interpS), np.shape(spikeDat))
+    #print(np.shape(s[:,0]), np.shape(spikeDat))
+    #print(np.shape(t_f), np.shape(timeVec))
+    interpS = np.interp(timeVec, t_f[:,0], s[:,0])
     corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
+
     print(corrCoef)
 
 
     plt.figure(6)
-    plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')
-    plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
+    plt.plot(t_f, s, label=r'Simulated Rate')
+    plt.plot(timeVec, spikeDat, label="Recorded Spike")
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$s$', fontsize = 14)
-    plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
+    plt.title("Expected and Recorded spikes, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
 
     np.save('data/s_node_' + str(row), s)
-    #np.save('data/t_node_' + str(row), t_f)
-    #np.save('data/sol_node_' + str(row), sol)
+    np.save('data/t_node_' + str(row), t_f)
+    np.save('data/sol_node_' + str(row), sol)
+
     
-
-
-
-    # trying to use se.score out of the box doesn't work well. This is attempted below. #
-#    print(np.shape(s))                                                                              
-#    print(np.shape(spikeDat))
-#    s = np.array(s[:,0])
-#    c = np.array(se.score(s, spikeDatRaw, method='corr', downsample=factor))
-#    print(c)
 
     plt.show()
