@@ -77,7 +77,7 @@ if __name__=="__main__":
     
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
-    subsetAmount = 4000
+    subsetAmount = 2000
     data1 = data1[:, :subsetAmount]
     m,n = data1.shape
 
@@ -93,9 +93,9 @@ if __name__=="__main__":
 
     # define initial conditions
     Ca_0 = 5  #Ca^{2+} [mol/area]?
-    Ci_0 = 7   #CI         
+#    Ci_0 = 7   #CI         
     CiF_0 = CI_Meas[0]  #CI^* #was previously 0, real data readouts start with some concentration.
-    x0 = np.array([Ca_0, Ci_0, CiF_0])
+    x0 = np.array([Ca_0, CiF_0])
 
 
     # follow MPC example ``batch bioreactor`` on do-mpc website
@@ -105,7 +105,7 @@ if __name__=="__main__":
     # states struct, optimization variables
     # S is an unknown parameter. _x denotes var, _p param?
     Ca = model.set_variable('_x', 'Ca')
-    Ci = model.set_variable('_x', 'Ci') #
+#    Ci = model.set_variable('_x', 'Ci') #
     CiF = model.set_variable('_x', 'CiF')
 
     # define ODEs and parameters, kr << kf
@@ -113,13 +113,13 @@ if __name__=="__main__":
     kr = 7.6 
     alpha = 1
     gamma = 1   # passive diffusion
-    Ca_ext = 100 # constant extracellular calcium. Constant (assumes external is sink). UNUSED.
-    s = model.set_variable('_u', 's')   # control variable ( input )
+    L = 100     # total amount of calcium indicator
+    s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
-    model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ci*Ca)
-    model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
-    model.set_rhs('CiF', kf*Ci*Ca - kr*CiF)
+    model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ca*(L - CiF))
+#   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
+    model.set_rhs('CiF', kf*Ca*(L - CiF) - kr*CiF)
    
     model.setup()
     mpc = do_mpc.controller.MPC(model)
@@ -206,13 +206,14 @@ if __name__=="__main__":
 
     # pull final solutions for ease of use
     Ca_f = mpc.data['_x'][:, 0]
-    Ci_f = mpc.data['_x'][:, 1]
-    CiF_f = mpc.data['_x'][:, 2]
+#    Ci_f = mpc.data['_x'][:, 1]
+    CiF_f = mpc.data['_x'][:, 1]
     t_f = mpc.data['_time']
     s = mpc.data['_u']
    
+    Ci_f = L - CiF_f
 
-    #print(np.shape(mpc.data['_x']))
+    print(np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )

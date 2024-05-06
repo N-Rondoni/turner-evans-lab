@@ -20,7 +20,7 @@ def spikeCounter(data, binSize):
     for i in range(binSize, n):
         firingRate[i] = np.sum(data[i-binSize:i])
 
-    return firingRate
+    return firingRate, timeBinSize
 
 
 if __name__ == "__main__":

@@ -274,6 +274,12 @@ if __name__=="__main__":
     # finally scale so viewing is more clear
     s = (np.max(spikeDat)/np.max(s))*s
 
+    interpS = np.interp(timeVec, t_f[:,0], s[:,0])
+    corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
+
+    print(corrCoef)
+
+
     plt.figure(6)
     plt.plot(t_f, s, label=r'Simulated Rate')
     plt.plot(timeVec, spikeDat, label="Recorded Spike")
