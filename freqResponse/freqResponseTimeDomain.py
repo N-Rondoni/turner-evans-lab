@@ -53,27 +53,27 @@ def CRN(t, A):
 
 if __name__=="__main__":
 
-    n = 2000
+    n = 4000
     tEnd = 100
     timeVec = np.linspace(0, tEnd, n)
     tsolve = [0, tEnd]
-    transientTime = 49 #for small w, transients end after ~40s. 
+    transientTime = 40 #for small w, transients end after ~40s. 
 
     # define initial conditions
     X = 0 #Ca^{2+}
-    Z = 50  #CI^* #was previously 0, real data readouts start with some concentration.
+    Z = 30  #CI^* #was previously 0, real data readouts start with some concentration.
 
     # define constants/reaction parameters, kr << kf
     kf = 0.0513514
     kr = 7.6
-    amp = 10    
+    amp = 200    
     # total sum of calcium indicator
-    L = 100
+    L = 30
     
     # pack up parameters and ICs, looping through periods
     u0 = [X, Z]
 
-    omegas = np.arange(0, 100, 0.1)
+    omegas = np.arange(0.1, 120, 0.1)
     accumed_X = np.zeros((len(omegas), len(timeVec)))
     accumed_Z = np.zeros((len(omegas), len(timeVec)))
     accumed_S = np.zeros((len(omegas), len(timeVec)))
@@ -95,7 +95,8 @@ if __name__=="__main__":
     # want to compute amplitude after ~ 10 seconds, as then transients have died down
     transientIndex = len(timeVec) - len(np.where(timeVec > transientTime)[0])
     # the above ensures timeVec[transientIndex] > 10
-
+    print(timeVec[transientIndex])
+    
     # for each w, compute amplitude
     ampX = np.zeros(len(omegas))
     ampZ = np.zeros(len(omegas))
@@ -115,42 +116,36 @@ if __name__=="__main__":
         minValS = np.min(accumed_S[i, transientIndex:])
         ampS[i] = (maxValS - minValS)/2
  
-   
+    # compute mean of signal
+    meanX = np.zeros(len(omegas))
+    meanZ = np.zeros(len(omegas))
+    for i in range(len(omegas)):
+        meanX[i] = np.mean(accumed_X[i, transientIndex:])
+        meanZ[i] = np.mean(accumed_Z[i, transientIndex:])
+
+
     # plot signal, response in both state variables
     fig, axs = plt.subplots(1, 3)
-    
-
-#    for i in range(len(sol.t)):
-#        pulse[i] = impulseRamp(sol.t[i])
-#    axs[0].plot(sol.t, pulse)
-
-
+   
     # plot ratios of amplitudes
-#    axs[0].plot(omegas, ampS/ampX)
-#    axs[0].set_xlabel(r'Period $w$', fontsize = 16)
-#    axs[0].set_ylabel(r'$\frac{A(s)}{A(ca^{2+})}$', fontsize=16)
-    
-#    axs[1].plot(omegas, ampS/ampZ)
-#    axs[1].set_xlabel(r'Period $w$', fontsize = 16)
-#    axs[1].set_ylabel(r'$\frac{A(s)}{A(CI^*)}$', fontsize=16)
-#    plt.title("Frequency Response")
-    
-    # plot ratios of amplitudes
-    axs[0].plot(omegas, ampX/10)
+    axs[0].plot(omegas, np.log(ampX/ampS))
     axs[0].set_xlabel(r'$w$', fontsize = 16)
     axs[0].set_ylabel(r'$\frac{A(ca^{2+})}{A(s)}$', fontsize=16)
     axs[0].title.set_text("Calcium Ion")#, fontsize = 18)
 
-    axs[1].plot(omegas, ampZ/10)
+    axs[1].plot(omegas, np.log(ampZ/ampS))
     axs[1].set_xlabel(r'$w$', fontsize = 16)
     axs[1].set_ylabel(r'$\frac{A(CI^*)}{A(s)}$', fontsize=16)
     axs[1].title.set_text("Calcium Indicator")#, fontsize = 18)
 
-    axs[2].plot(omegas, ampZ/10, label = r'$\frac{A(ca^{2+})}{A(s)}$')
-    axs[2].plot(omegas, ampX/10, label = r'$\frac{A(CI^*)}{A(s)}$')
+    axs[2].plot(omegas, np.log(ampZ/ampS), label = r'$\frac{A(ca^{2+})}{A(s)}$')
+    axs[2].plot(omegas, np.log(ampX/ampS), label = r'$\frac{A(CI^*)}{A(s)}$')
     axs[2].legend()
     axs[2].title.set_text("Both Plots Overlaid")
     axs[2].set_xlabel(r'$w$', fontsize = 16)
+
+#    axs[3].plot(meanX, omegas)
+#    axs[3].plot(meanZ, omegas)
 
     plt.show()
 
