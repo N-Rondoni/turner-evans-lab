@@ -71,7 +71,7 @@ def plotErr(x, y):
 
 if __name__=="__main__":
     # frequently changed parameters:
-    penalty = 0.01
+    penalty = 0.00
     
     file_path = 'data/5.test.calcium.csv'
     #mat = scipy.io.loadmat(file_path) #make csv file work..
@@ -79,14 +79,14 @@ if __name__=="__main__":
     
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
-    subsetAmount = np.max(np.shape(data1)) # the way its set up, must be divisble by factor or stuff breaks. 
-    subsetAmount = 8000
+    #subsetAmount = np.max(np.shape(data1)) # the way its set up, must be divisble by factor or stuff breaks. 
+    subsetAmount = 1000
     data1 = data1[:, :subsetAmount]
     m,n = data1.shape
     print(data1)
 
 
-    row = 2
+    row = 2 # 2 has nans for testing
     #row = int(sys.argv[1]) 
     CI_Meas = data1[row, :] # looks at a single neuron.  
     #CI_Meas = 50*CI_Meas
@@ -119,7 +119,7 @@ if __name__=="__main__":
     kr = 7.6 
     alpha = 1
     gamma = 1   # passive diffusion
-    L = CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    L = 100 #CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
@@ -149,8 +149,11 @@ if __name__=="__main__":
 
 #    print(model.u.keys())
 
-    # define objective, which is to miminize the difference between Ci_m and Ci. 
+    # define objective, which is to miminize the difference between Ci_m and Ci.
+    #baseLine = .1
+    #mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
+    #
     #lterm = .001*model.u['s']**2 #+ (model.x['CiF'] - model.tvp['Ci_m'])**2 # stage cost 
     lterm = mterm
 
@@ -278,25 +281,49 @@ if __name__=="__main__":
     spikeDat = np.array(spikeDat)
     spikeDat = spikeDat[:, :subsetAmount]
     mSpike,nSpike = spikeDat.shape
-
     spikeDatRaw = spikeDat[row, :]
-    factor = 4
-    spikeDat = _downsample(spikeDatRaw, 4)
-    s = _downsample(s, 4)
+    
+    ##----------------------------------------
+    # POST PROCESS FOR DOWNSAMPLING BELOW
+    ##----------------------------------------
+    factor= 4 #how much to downsample by
+    # remove NaNs
+    s = np.array(s[:,0]) # gotta reshape s 
+    naninds = np.isnan(spikeDatRaw) | np.isnan(s)
+    print(np.shape(naninds))
+    print(np.shape(spikeDatRaw))
+    print(np.shape(s))
+    spikeDatRaw = spikeDatRaw[~naninds]
+    s = s[~naninds]
+    
+    print(np.shape(naninds))
+    print(np.shape(spikeDatRaw))
+    print(np.shape(s))
+    
+    spikeDat = _downsample(spikeDatRaw, factor)
+    s = _downsample(s, factor)
+
+    m1 = min([len(s), len(spikeDat)])
+    s = s[0:m1]
+    spikeDat = spikeDat[0:m1]
+    #print(np.shape(spikeDat))
+    #print(np.shape(s))
 #    spikeDat, binSizeTime = spikeCounter(spikeDatRaw, 4)
 
     # finally scale so viewing is more clear
-    #s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
+    s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
 
     # compute correlation coefficient
-    #print(np.shape(s))
-    #print(np.shape(t_f[::factor,0]))
-    interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
-    #print(np.shape(interpS), np.shape(spikeDat))
-    corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
-    print(corrCoef)
+    
+    #interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
 
+    #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
+    #print("interp coeff:", corrCoef)
+    corrCoef = np.corrcoef(s, spikeDat)[0, 1]
+    print("no interp:", corrCoef)
 
+    #print("s:", np.shape(s))
+    #print("truth:", np.shape(spikeDat))
     plt.figure(6)
     plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')
     plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
