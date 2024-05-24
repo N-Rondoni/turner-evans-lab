@@ -23,6 +23,9 @@ def spikeCounter(data, binSize):
     return firingRate, timeBinSize
 
 
+#def downSampler(x, y, factor):
+
+
 if __name__ == "__main__":
     # to test, load in spike dat. 
     subsetAmount = 200

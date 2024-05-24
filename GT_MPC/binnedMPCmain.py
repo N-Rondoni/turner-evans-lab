@@ -72,24 +72,23 @@ def plotErr(x, y):
 if __name__=="__main__":
     # frequently changed parameters:
     penalty = 0.00
+    row = 2 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
+    #row = int(sys.argv[1])   
     
     file_path = 'data/5.test.calcium.csv'
-    #mat = scipy.io.loadmat(file_path) #make csv file work..
-    data1 = pd.read_csv(file_path).T #had to figure out why data class is flyDat from print(mat). No clue. 
-    
+    data1 = pd.read_csv(file_path).T 
+
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
-    #subsetAmount = np.max(np.shape(data1)) # the way its set up, must be divisble by factor or stuff breaks. 
-    subsetAmount = 1000
+    #subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
+    subsetAmount = 4000
     data1 = data1[:, :subsetAmount]
     m,n = data1.shape
-    print(data1)
-
-
-    row = 2 # 2 has nans for testing
-    #row = int(sys.argv[1]) 
+   
+     
     CI_Meas = data1[row, :] # looks at a single neuron.  
     #CI_Meas = 50*CI_Meas
+    print(CI_Meas)
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
@@ -119,7 +118,7 @@ if __name__=="__main__":
     kr = 7.6 
     alpha = 1
     gamma = 1   # passive diffusion
-    L = 100 #CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    L = 10 #CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
@@ -150,9 +149,10 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
-    #baseLine = .1
-    #mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
-    mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
+    baseLine = 1.5
+    mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
+    #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
+    
     #
     #lterm = .001*model.u['s']**2 #+ (model.x['CiF'] - model.tvp['Ci_m'])**2 # stage cost 
     lterm = mterm
@@ -221,6 +221,7 @@ if __name__=="__main__":
     s = mpc.data['_u']
    
     Ci_f = L - CiF_f
+    CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
 
     print(np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
@@ -254,7 +255,7 @@ if __name__=="__main__":
 
     plt.figure(4)
     plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
-    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$')
+    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
     plt.title(r'$CI^{*}$, simulated and measured')
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
@@ -290,47 +291,57 @@ if __name__=="__main__":
     # remove NaNs
     s = np.array(s[:,0]) # gotta reshape s 
     naninds = np.isnan(spikeDatRaw) | np.isnan(s)
-    print(np.shape(naninds))
-    print(np.shape(spikeDatRaw))
-    print(np.shape(s))
+    print("nanID shape:", np.shape(naninds))
+    print("spikeDatRaw shape:", np.shape(spikeDatRaw))
+    print("shape of s", np.shape(s))
+    print(spikeDatRaw)
     spikeDatRaw = spikeDatRaw[~naninds]
     s = s[~naninds]
+    print(spikeDatRaw)
     
-    print(np.shape(naninds))
-    print(np.shape(spikeDatRaw))
-    print(np.shape(s))
+    print("SpikeDat post nan removal", np.shape(spikeDatRaw))
+    print("s shape post nan removal", np.shape(s))
     
     spikeDat = _downsample(spikeDatRaw, factor)
     s = _downsample(s, factor)
 
-    m1 = min([len(s), len(spikeDat)])
-    s = s[0:m1]
-    spikeDat = spikeDat[0:m1]
-    #print(np.shape(spikeDat))
-    #print(np.shape(s))
+    #m1 = min([len(s), len(spikeDat)])
+    #s = s[0:m1]
+    #spikeDat = spikeDat[0:m1]
+    newTime = np.linspace(0, t_f[-1], m1)
+    print(np.shape(spikeDat))
+    print(np.shape(s))
 #    spikeDat, binSizeTime = spikeCounter(spikeDatRaw, 4)
 
     # finally scale so viewing is more clear
+    #s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
     s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
 
     # compute correlation coefficient
     
-    #interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
+    interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
 
     #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
     #print("interp coeff:", corrCoef)
-    corrCoef = np.corrcoef(s, spikeDat)[0, 1]
+    corrCoef = np.corrcoef(s[500:], spikeDat[500:])[0, 1] # toss first 200 time instants, contains bad transients.
     print("no interp:", corrCoef)
 
     #print("s:", np.shape(s))
     #print("truth:", np.shape(spikeDat))
+   
     plt.figure(6)
-    plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')
-    plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
+    #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         these explode as soon as len(timeVec) isn't evenly divisible by factor
+    #plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
+    plt.plot(newTime, s, label=r'Simulated Rate')
+    plt.plot(newTime, spikeDat, label="Recorded Spike")
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$s$', fontsize = 14)
     plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
+    
+    plt.show()
+    sys.exit()
+
 
     np.save('data/s_node_' + str(row), s)
     #np.save('data/t_node_' + str(row), t_f)
