@@ -83,9 +83,12 @@ if __name__=="__main__":
     # calcium data is so large, start with a subset.
     subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
     #subsetAmount = 1000
+    m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
-    m,n = data1.shape
-    #print(m, n)
+    
+
+    print(np.shape(CI_Meas))
+
 
     # looks at a single neuron.  
     #CI_Meas = 50*CI_Meas
