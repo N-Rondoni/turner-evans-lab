@@ -71,24 +71,25 @@ def plotErr(x, y):
 
 if __name__=="__main__":
     # frequently changed parameters:
-    penalty = 0.00
-    row = 2 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
+    penalty = 0.01
+    row = 4 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
     #row = int(sys.argv[1])   
     
-    file_path = 'data/5.test.calcium.csv'
+    dset = 5
+    file_path = 'data/' + str(dset) + '.test.calcium.csv'
     data1 = pd.read_csv(file_path).T 
 
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
     subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
-    #subsetAmount = 8000
-    data1 = data1[:, :subsetAmount]
+    #subsetAmount = 1000
+    CI_Meas = data1[row, :subsetAmount]
     m,n = data1.shape
-   
-     
-    CI_Meas = data1[row, :] # looks at a single neuron.  
+    #print(m, n)
+
+    # looks at a single neuron.  
     #CI_Meas = 50*CI_Meas
-    print(CI_Meas)
+    #print(CI_Meas)
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
@@ -116,9 +117,9 @@ if __name__=="__main__":
     # define ODEs and parameters, kr << kf
     kf = 0.0513514
     kr = 7.6 
-    alpha = 1
-    gamma = 1   # passive diffusion
-    L = CiF_0 + 7 #CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    alpha = 20 
+    gamma = 0.1   # passive diffusion
+    L = CiF_0 + 7      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
@@ -149,7 +150,7 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
-    baseLine = 2.3 # 2.5 was nice
+    baseLine = 1 # 2.5 was nice for row 2
     mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
     
@@ -283,6 +284,12 @@ if __name__=="__main__":
     ##----------------------------------------
     # POST PROCESS FOR DOWNSAMPLING BELOW
     ##----------------------------------------
+    # save things for later eval too
+    np.save('data/s_node_' + str(row) + 'dset_' + str(dset), s)
+    #np.save('data/t_node_' + str(row), t_f)
+    #np.save('data/sol_node_' + str(row), sol)
+    
+
     # remove NaNs AT START
     s = np.array(s[:,0]) # gotta reshape s 
     naninds = np.isnan(spikeDatRaw) | np.isnan(s)
@@ -297,7 +304,7 @@ if __name__=="__main__":
     #print("SpikeDat post nan removal", np.shape(spikeDatRaw))
     #print("s shape post nan removal", np.shape(s))
     
-    factor= 4 #how much to downsample by
+    factor= 4#32 #how much to downsample by
     spikeDat = _downsample(spikeDatRaw, factor)
     s = _downsample(s, factor)
 
@@ -340,7 +347,7 @@ if __name__=="__main__":
     sys.exit()
 
 
-    np.save('data/s_node_' + str(row), s)
+    #np.save('data/s_node_' + str(row), s)
     #np.save('data/t_node_' + str(row), t_f)
     #np.save('data/sol_node_' + str(row), sol)
     
