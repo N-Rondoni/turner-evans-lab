@@ -71,24 +71,29 @@ def plotErr(x, y):
 
 if __name__=="__main__":
     # frequently changed parameters:
-    penalty = 0.00
-    row = 3 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
-    #row = int(sys.argv[1])   
+    penalty = 0.01
+    #row = 4 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
+    #dset = 5
+    row = int(sys.argv[1])   
+    dset = int(sys.argv[2])
     
-    file_path = 'data/5.test.calcium.csv'
+    file_path = 'data/' + str(dset) + '.test.calcium.csv'
     data1 = pd.read_csv(file_path).T 
 
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
     subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
-    #subsetAmount = 8000
-    data1 = data1[:, :subsetAmount]
-    m,n = data1.shape
-    print(m, n)
-     
-    CI_Meas = data1[row, :] # looks at a single neuron.  
+    #subsetAmount = 1000
+    m, n = data1.shape
+    CI_Meas = data1[row, :subsetAmount]
+    
+
+    #print(np.shape(CI_Meas))
+
+
+    # looks at a single neuron.  
     #CI_Meas = 50*CI_Meas
-    print(CI_Meas)
+    #print(CI_Meas)
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
@@ -116,9 +121,9 @@ if __name__=="__main__":
     # define ODEs and parameters, kr << kf
     kf = 0.0513514
     kr = 7.6 
-    alpha = 1
-    gamma = 1   # passive diffusion
-    L = CiF_0 + 7 #CiF_0 + 7     # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    alpha = 20 
+    gamma = 0.1   # passive diffusion
+    L = CiF_0 + 7      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
@@ -149,7 +154,7 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
-    #baseLine = 1 # 2.5 was nice for row 2
+    baseLine = 1 # 2.5 was nice for row 2
     #mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
     
@@ -272,8 +277,9 @@ if __name__=="__main__":
 #    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
 
+    #sys.exit()
     # load in actual truth data
-    file_path2 = 'data/5.test.spikes.csv'
+    file_path2 = 'data/' + str(dset) + '.test.spikes.csv'
     spikeDat = pd.read_csv(file_path2).T #had to figure out why data class is flyDat from print(mat). No clue. 
     spikeDat = np.array(spikeDat)
     spikeDat = spikeDat[:, :subsetAmount]
@@ -283,6 +289,12 @@ if __name__=="__main__":
     ##----------------------------------------
     # POST PROCESS FOR DOWNSAMPLING BELOW
     ##----------------------------------------
+    # save things for later eval too
+    np.save('data/noBase_s_node_' + str(row) + 'dset_' + str(dset), s)
+    #np.save('data/t_node_' + str(row), t_f)
+    #np.save('data/sol_node_' + str(row), sol)
+    
+
     # remove NaNs AT START
     s = np.array(s[:,0]) # gotta reshape s 
     naninds = np.isnan(spikeDatRaw) | np.isnan(s)
@@ -297,7 +309,7 @@ if __name__=="__main__":
     #print("SpikeDat post nan removal", np.shape(spikeDatRaw))
     #print("s shape post nan removal", np.shape(s))
     
-    factor= 4 #how much to downsample by
+    factor= 4#32 #how much to downsample by
     spikeDat = _downsample(spikeDatRaw, factor)
     s = _downsample(s, factor)
 
@@ -323,7 +335,7 @@ if __name__=="__main__":
     #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
     #print("interp coeff:", corrCoef) -----------------------------------------------
     corrCoef = np.corrcoef(s, spikeDat)[0, 1] # toss first 200 time instants, contains bad transients.
-    print("no interp:", corrCoef)     # ---------------------------------------------
+    print("Corr Coef, no interp:", corrCoef)     # ---------------------------------------------
 
    
     plt.figure(6)
@@ -335,23 +347,5 @@ if __name__=="__main__":
     plt.ylabel(r'$s$', fontsize = 14)
     plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
-    
-    plt.show()
-    sys.exit()
 
-
-    np.save('data/s_node_' + str(row), s)
-    #np.save('data/t_node_' + str(row), t_f)
-    #np.save('data/sol_node_' + str(row), sol)
-    
-
-
-
-    # trying to use se.score out of the box doesn't work well. This is attempted below. #
-#    print(np.shape(s))                                                                              
-#    print(np.shape(spikeDat))
-#    s = np.array(s[:,0])
-#    c = np.array(se.score(s, spikeDatRaw, method='corr', downsample=factor))
-#    print(c)
-
-    plt.show()
+    #plt.show()

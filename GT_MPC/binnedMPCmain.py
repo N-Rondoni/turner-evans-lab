@@ -72,7 +72,7 @@ def plotErr(x, y):
 if __name__=="__main__":
     # frequently changed parameters:
     penalty = 0.01
-    row = 0 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
+    row =7 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
     #row = int(sys.argv[1])   
     
     dset = 5
