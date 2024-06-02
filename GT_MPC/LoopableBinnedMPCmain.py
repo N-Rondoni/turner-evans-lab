@@ -353,4 +353,4 @@ if __name__=="__main__":
     plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
 
-    plt.show()
+    #plt.show()

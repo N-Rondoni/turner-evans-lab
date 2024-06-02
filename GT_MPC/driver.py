@@ -9,8 +9,9 @@ from spikeCounter import spikeCounter
 from spikefinder_eval import _downsample
 
 
-dsets = [1, 3, 5] #dset 1, row 1 has NaN
+#dsets = [1, 3, 5] #dset 1, row 1 has NaN
 #dsets = [5]
+dsets = [2, 4]
 
 for dset in dsets:
     file_path = 'data/' + str(dset) + '.test.calcium.csv'
@@ -21,7 +22,7 @@ for dset in dsets:
     i = 0
     while i < mDat:
         start  = time.time()
-        print("Beginning solve on data set", str(dset), "neuron",  i)
+        print("Beginning solve on data set", str(dset) + ", neuron",  i)
         
         # check for NaNs
         naninds = np.isnan(data1[i,:])
@@ -29,7 +30,7 @@ for dset in dsets:
         NaNpresent = np.any(naninds)
 
         if NaNpresent == True:
-            print("There are NaNs in this data set! Skipping neuron. ")
+            print("This neuron's data contains NaNs! Skiping to next... ")
             print("------------------------------------------------------------------------")
             i = i + 1
         else:
