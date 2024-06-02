@@ -43,7 +43,7 @@ def plot_correlations(factors, corrCoefs):
     bin_widths = [40, 83.0, 167.0, 333.0]  # Specific bin width values
     ax2.set_xticks(factors)
     ax2.set_xticklabels([f'{bw:.1f}' for bw in bin_widths])
-    ax2.set_xlabel("Bin width (ms)", fontsize=16)
+    ax2.set_xlabel("Bin width (ms)", fontsize=20)
    
     # Adjusting layout to fit elements
     fig.tight_layout()
@@ -58,7 +58,7 @@ def plot_correlations(factors, corrCoefs):
 if __name__=="__main__":
     # load in actual truth data
     dset = 1
-    row = 2
+    row = 0
     file_path2 = 'data/' + str(dset) + '.test.spikes.csv'
     spikeDat = pd.read_csv(file_path2).T #had to figure out why data class is flyDat from print(mat). No clue. 
     spikeDat = np.array(spikeDat)

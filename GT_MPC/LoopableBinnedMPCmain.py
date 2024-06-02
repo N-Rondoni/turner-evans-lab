@@ -83,7 +83,7 @@ if __name__=="__main__":
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
     subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
-    #subsetAmount = 1000
+    #subsetAmount = 2000
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
     
@@ -226,9 +226,11 @@ if __name__=="__main__":
     s = mpc.data['_u']
    
     Ci_f = L - CiF_f
+    print("min pre baseline:", np.min(CiF_f))
     CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
+    print("min post baseline:", np.min(CiF_f))
 
-    print("Data shape:", np.shape(mpc.data['_x']))
+    #print("Data shape:", np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
@@ -328,24 +330,27 @@ if __name__=="__main__":
 
        
     # finally scale so viewing is more clear
-    s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
+    # pick a subset because transients are usually bad
+    prettySubset = 300
+    s = (np.max(spikeDat[prettySubset:])/np.max(s[prettySubset:]))*s # correlation coeff. invariant wrt scaling. 
 
     # compute correlation coefficient -----------------------------------------------
     #interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
     #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
     #print("interp coeff:", corrCoef) -----------------------------------------------
-    corrCoef = np.corrcoef(s, spikeDat)[0, 1] # toss first 200 time instants, contains bad transients.
+    corrCoef = np.corrcoef(s[prettySubset:], spikeDat[prettySubset:])[0, 1] # toss first 200 time instants, contains bad transients.
     print("Corr Coef, no interp:", corrCoef)     # ---------------------------------------------
 
    
+    
     plt.figure(6)
     #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         these explode as soon as len(timeVec) isn't evenly divisible by factor
     #plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
-    plt.plot(newTime, s, label=r'Simulated Rate')
-    plt.plot(newTime, spikeDat, label="Recorded Spike Rate")
+    plt.plot(newTime[prettySubset:], s[prettySubset:], label=r'Simulated Rate')
+    plt.plot(newTime[prettySubset:], spikeDat[prettySubset:], label="Recorded Spike Rate", alpha = 0.2)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'$s$', fontsize = 14)
     plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
 
-    #plt.show()
+    plt.show()

@@ -9,23 +9,36 @@ from spikeCounter import spikeCounter
 from spikefinder_eval import _downsample
 
 
-dsets = [1, 5] #dset 1, row 1? has NaN
+dsets = [1, 3, 5] #dset 1, row 1 has NaN
+#dsets = [5]
 
-dsets = [5]
 for dset in dsets:
     file_path = 'data/' + str(dset) + '.test.calcium.csv'
     data1 = pd.read_csv(file_path).T 
     data1 = np.array(data1)
     mDat, nDat = np.shape(data1)
-    #subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks.     
-    #CI_Meas = data1[row, :subsetAmount]
-    for i in range(mDat):
+    # loop through rows, each corresponds to a neuron. 
+    i = 0
+    while i < mDat:
         start  = time.time()
         print("Beginning solve on data set", str(dset), "neuron",  i)
-        os.system("python3 LoopableBinnedMPCmain.py " + str(i) + " " + str(dset))
-        end = time.time()
-        print("previous solve for neuron", i,"completed in", (end - start), "seconds")
+        
+        # check for NaNs
+        naninds = np.isnan(data1[i,:])
+        #if the below evaluates to true, there are NaNs in the dataset.
+        NaNpresent = np.any(naninds)
 
+        if NaNpresent == True:
+            print("There are NaNs in this data set! Skipping neuron. ")
+            print("------------------------------------------------------------------------")
+            i = i + 1
+        else:
+            # run solver if no NaNs present.
+            os.system("python3 LoopableBinnedMPCmain.py " + str(i) + " " + str(dset))
+            end = time.time()
+            print("previous solve for neuron", i, "completed in", (end - start)/60, "minutes")
+            print("------------------------------------------------------------------------")
+            i = i + 1
 
 
 
