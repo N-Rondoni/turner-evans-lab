@@ -66,6 +66,18 @@ def plotErr(x, y):
     #plt.savefig(filename)
     #os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
+def sigma(s):
+    # this is what the authors use to go from energy -> hz
+    a = 6.34
+    beta = 0.8
+    b = 10
+    c = 0.5
+    
+    out = np.zeros(len(s))
+    for i in range(len(s)):
+        out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
+    return out
+
 
 
 
@@ -176,7 +188,7 @@ if __name__=="__main__":
     #mpc.bounds['lower', '_x', 'Ca'] = 0.0
     #mpc.bounds['lower', '_x', 'Ci'] = 0.0
     #mpc.bounds['lower', '_x', 'CiF'] = 0.0
-    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
+#    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
 #    mpc.bounds['upper', '_u', 's'] = 100
    
     # once mpc.setup() is called, no model parameters can be changed.
@@ -224,7 +236,9 @@ if __name__=="__main__":
     CiF_f = mpc.data['_x'][:, 1]
     t_f = mpc.data['_time']
     s = mpc.data['_u']
-   
+ 
+    s = sigma(s)
+
     Ci_f = L - CiF_f
     print("min pre baseline:", np.min(CiF_f))
     CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
@@ -298,7 +312,8 @@ if __name__=="__main__":
     
 
     # remove NaNs AT START
-    s = np.array(s[:,0]) # gotta reshape s 
+    #s = np.array(s[:,0]) # gotta reshape s 
+    
     naninds = np.isnan(spikeDatRaw) | np.isnan(s)
     #print("nanID shape:", np.shape(naninds))
     #print("spikeDatRaw shape:", np.shape(spikeDatRaw))
