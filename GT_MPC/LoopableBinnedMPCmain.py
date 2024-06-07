@@ -188,7 +188,7 @@ if __name__=="__main__":
     #mpc.bounds['lower', '_x', 'Ca'] = 0.0
     #mpc.bounds['lower', '_x', 'Ci'] = 0.0
     #mpc.bounds['lower', '_x', 'CiF'] = 0.0
-#    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
+    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
 #    mpc.bounds['upper', '_u', 's'] = 100
    
     # once mpc.setup() is called, no model parameters can be changed.
@@ -237,7 +237,6 @@ if __name__=="__main__":
     t_f = mpc.data['_time']
     s = mpc.data['_u']
  
-    s = sigma(s)
 
     Ci_f = L - CiF_f
     print("min pre baseline:", np.min(CiF_f))
@@ -249,8 +248,8 @@ if __name__=="__main__":
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
 
-    plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
-    plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
+    #plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
+    #plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
 
 
     # check error between Ci_M and Ci_sim
@@ -312,7 +311,7 @@ if __name__=="__main__":
     
 
     # remove NaNs AT START
-    #s = np.array(s[:,0]) # gotta reshape s 
+    s = np.array(s[:,0]) # gotta reshape s 
     
     naninds = np.isnan(spikeDatRaw) | np.isnan(s)
     #print("nanID shape:", np.shape(naninds))

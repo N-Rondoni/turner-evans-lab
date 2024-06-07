@@ -1,0 +1,4 @@
+This directory is identical to its parent directory, but we only perform a solve on 5 different neurons which serve
+as representatives of their respective dataset. For each neuron, we step through a wide array of parameters and note
+the correlation coefficient, hoping to find a set of parameters which perform best.
+

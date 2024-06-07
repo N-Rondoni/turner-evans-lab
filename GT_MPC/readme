@@ -1,0 +1,3 @@
+driver steps through all neurons, and all data sets.  Passes this info to 
+LoopableMPCmain.py, which generates the data/results
+processing.py then steps through all the generated data and plots/ computes corr score as a function of binwidth.

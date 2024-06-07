@@ -102,7 +102,7 @@ def NaNChecker(dset, row):
 if __name__=="__main__":
    
     # load in actual truth data
-    dsets = [1, 3, 5]
+    dsets = [1, 2, 3, 4, 5]
 
     for dset in dsets:
         # load in true spikes
@@ -138,6 +138,7 @@ if __name__=="__main__":
                     spikeDatDown = _downsample(spikeDatRaw, factor)
                     simSpikeDown = _downsample(simSpikesRaw, factor)
                     corrCoefs[j] = np.corrcoef(spikeDatDown, simSpikeDown)[0, 1] # toss first 200 time instants, contains bad transients.
+                    corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
             
 
                 # set up time to match, note final time is still computed with undownsampled n. Only use this time Vec for testing to be safe.
