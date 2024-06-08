@@ -152,16 +152,21 @@ if __name__=="__main__":
                         counter = counter + 1   
                 # set up time to match, note final time is still computed with undownsampled n. Only use this time Vec for testing to be safe.
                 n1 = min([len(spikeDatDown), len(simSpikeDown)])
-                t_f = np.linspace(0, finalTime, n1)
-    
+                t_down = np.linspace(0, finalTime, n1)
+                timeVec = np.linspace(0, finalTime, n)
                 neuron = i
-                
+               
+     
+
                 # finally call plot functions
                 plotCorrelations(factors, corrCoefs, neuron, dset) 
-                plotSignals(t_f[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # plot from 50: to avoid transients. Very messy.
-                subStart, subStop = 200, 400
-                plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset)
-            
+                #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
+                #subStart, subStop = 200, 400
+                #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
+                subStart, subStop = 2000, 4000
+                plotSignals(timeVec, simSpikesRaw, spikeDatRaw, neuron, dset)
+                plotSignalsSubset(timeVec, simSpikesRaw, spikeDatRaw, subStart, subStop, neuron, dset)
+
                 #print(np.shape(t_f[subStart:subStop]), np.shape(simSpikeDown[subStart:subStop]), np.shape(spikeDatDown[subStart:subStop]))
                 #print(np.shape(t_f), np.shape(simSpikeDown), np.shape(spikeDatDown))
 

@@ -185,12 +185,8 @@ if __name__=="__main__":
 
 
     # define constraints
-    #mpc.bounds['lower', '_x', 'Ca'] = 0.0
-    #mpc.bounds['lower', '_x', 'Ci'] = 0.0
-    #mpc.bounds['lower', '_x', 'CiF'] = 0.0
-    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
-#    mpc.bounds['upper', '_u', 's'] = 100
-   
+    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion if negative?
+  
     # once mpc.setup() is called, no model parameters can be changed.
     mpc.setup()
     
@@ -246,59 +242,13 @@ if __name__=="__main__":
     #print("Data shape:", np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
-    #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
-
-    #plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
-    #plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
-
-
+   
     # check error between Ci_M and Ci_sim
     CI_Meas_interp = np.interp(t_f, timeVec, CI_Meas)
     CI_Meas_interp = CI_Meas_interp[:, 0] # CiF_f different shape
     print("Relative MSE of tracking:", np.linalg.norm(CI_Meas_interp - CiF_f)/len(CiF_f))
 
 
-
-    plt.figure(3)    
-    plt.plot(t_f, (CI_Meas_interp - CiF_f))
-    plt.title(r'Error as a function of time')
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'$CI^{*}_{Meas} - CI^*_{Sim}$', fontsize = 14)
-    filename = 'CRE_fig3_' + str(row) + '.png'
-#    plt.savefig(filename)
-#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-    
-    plt.figure(4)
-    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
-    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
-    plt.title(r'$CI^{*}$, simulated and measured')
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'CI', fontsize = 14)
-    plt.legend()
-    filename = 'Tracking_dset'+ str(dset) + "_neuron" + str(row)
-    plt.savefig(filename)
-    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(row)) # only run with this line uncommented if you are Nick
-    os.system('rm ' + filename + '.png')
-    
-
-
-#    plt.savefig(filename)
-#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-
-    plt.figure(5)
-    plt.plot(t_f, s, label=r'$s (Hz)$')
-    plt.title(r'Signal s (maybe Hz)')
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'$s$', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig5_' + str(row) + '.png'
-#    plt.savefig(filename)
-#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-
-    #sys.exit()
     # load in actual truth data
     file_path2 = 'data/' + str(dset) + '.test.spikes.csv'
     spikeDat = pd.read_csv(file_path2).T #had to figure out why data class is flyDat from print(mat). No clue. 
@@ -319,18 +269,11 @@ if __name__=="__main__":
     # remove NaNs AT START
     s = np.array(s[:,0]) # gotta reshape s 
     
-    naninds = np.isnan(spikeDatRaw) | np.isnan(s)
-    #print("nanID shape:", np.shape(naninds))
-    #print("spikeDatRaw shape:", np.shape(spikeDatRaw))
-    #print("shape of s", np.shape(s))
-    #print(spikeDatRaw)
-    spikeDatRaw = spikeDatRaw[~naninds]
-    s = s[~naninds]
-    #print(spikeDatRaw)
+    #naninds = np.isnan(spikeDatRaw) | np.isnan(s)
+    #spikeDatRaw = spikeDatRaw[~naninds]
+    #s = s[~naninds]
     
-    #print("SpikeDat post nan removal", np.shape(spikeDatRaw))
-    #print("s shape post nan removal", np.shape(s))
-    
+   
     factor= 4#32 #how much to downsample by
     spikeDat = _downsample(spikeDatRaw, factor)
     s = _downsample(s, factor)
@@ -358,19 +301,42 @@ if __name__=="__main__":
     #interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
     #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
     #print("interp coeff:", corrCoef) -----------------------------------------------
-    corrCoef = np.corrcoef(s[prettySubset:], spikeDat[prettySubset:])[0, 1] # toss first 200 time instants, contains bad transients.
+    corrCoef = np.corrcoef(s, spikeDat)[0, 1] # toss first 200 time instants, contains bad transients.
     print("Corr Coef, no interp:", corrCoef)     # ---------------------------------------------
 
-   
+    #plt.figure(3)    
+    #plt.plot(t_f, (CI_Meas_interp - CiF_f))
+    #plt.title(r'Error as a function of time')
+    #plt.xlabel(r'$t$', fontsize = 14)
+    #plt.ylabel(r'$CI^{*}_{Meas} - CI^*_{Sim}$', fontsize = 14)
+    #filename = 'Tracking_Error_dset'+ str(dset) + "_neuron" + str(row)
+    #plt.savefig(filename)
+    #os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+    #os.system('rm ' + filename + '.png')
+
     
-    plt.figure(6)
-    #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         these explode as soon as len(timeVec) isn't evenly divisible by factor
-    #plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
-    plt.plot(newTime[prettySubset:], s[prettySubset:], label=r'Simulated Rate')
-    plt.plot(newTime[prettySubset:], spikeDat[prettySubset:], label="Recorded Spike Rate", alpha = 0.2)
+    neuron = row
+    plt.figure(4)
+    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
+    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
+    plt.title(r'$CI^{*}$, simulated and measured')
     plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'$s$', fontsize = 14)
-    plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
+    plt.ylabel(r'CI', fontsize = 14)
     plt.legend()
-    
+    filename = 'Tracking_dset'+ str(dset) + "_neuron" + str(row)
+    plt.savefig(filename)
+    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+    os.system('rm ' + filename + '.png')
+
+    plt.figure(5)
+    plt.plot(t_f[2000:4000], CI_Meas_interp[2000:4000], label=r'$CI^{*}_{Meas}$')
+    plt.plot(t_f[2000:4000], CiF_f[2000:4000], label=r'$CI^{*}_{Sim}$') ## subtracting baseline
+    plt.title(r'$CI^{*}$, simulated and measured')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'CI', fontsize = 14)
+    plt.legend()
+    filename = 'Tracking_subset_dset'+ str(dset) + "_neuron" + str(row)
+    plt.savefig(filename)
+    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+    os.system('rm ' + filename + '.png')
     #plt.show()
