@@ -131,10 +131,20 @@ if __name__=="__main__":
     CiF = model.set_variable('_x', 'CiF')
 
     # define ODEs and parameters, kr << kf
-    kf = 0.0513514
-    kr = 7.6 
-    alpha = 20 
-    gamma = 0.1   # passive diffusion
+    if dset in [1, 2, 4]:
+        kf = 0.032
+        kr = 8      # this is kr: 1 kf: .004 = (1/.250)*(1/1000) (to be in microMolar) ratio. upped a lil
+        alpha = 20 
+        gamma = 0.1 
+        baseLine = 1
+
+    if dset in [3, 5]:
+        kf = 0.5555555555555
+        kr = 8 # this is the kr:1 to kf:.006944 ratio, just x8 because alpha and gamma were scalled for around this regieme.
+        alpha = 20 
+        gamma = 0.1 
+        baseLine = 1
+                       
     L = CiF_0 + 7      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
@@ -146,8 +156,7 @@ if __name__=="__main__":
     model.setup()
     mpc = do_mpc.controller.MPC(model)
 
-    # Optimizer parameters, can change collocation/state discretization here.
-    # does not impact my actual horizon or stepsize for simulation? 
+    # Optimizer parameters, can change collocation/state discretization here. 
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
             't_step': 1/59.1, # (s)
@@ -166,11 +175,10 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
-    baseLine = 1 # 2.5 was nice for row 2
     mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
     
-    #
+    
     #lterm = .001*model.u['s']**2 #+ (model.x['CiF'] - model.tvp['Ci_m'])**2 # stage cost 
     lterm = mterm
 
@@ -316,6 +324,7 @@ if __name__=="__main__":
 
     
     neuron = row
+
     plt.figure(4)
     plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
     plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
@@ -323,7 +332,7 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
     plt.legend()
-    filename = 'Tracking_dset'+ str(dset) + "_neuron" + str(row)
+    filename = 'Tracking_dset'+ str(dset) + "_neuron" + str(neuron)
     plt.savefig(filename)
     os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
     os.system('rm ' + filename + '.png')
@@ -335,7 +344,7 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
     plt.legend()
-    filename = 'Tracking_subset_dset'+ str(dset) + "_neuron" + str(row)
+    filename = 'Tracking_subset_dset'+ str(dset) + "_neuron" + str(neuron)
     plt.savefig(filename)
     os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
     os.system('rm ' + filename + '.png')
