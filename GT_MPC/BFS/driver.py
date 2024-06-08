@@ -43,7 +43,7 @@ paramGrid = np.stack(np.meshgrid(*[alphaSpace, gammaSpace, kfSpace, krSpace, bas
 
 
 # step through rows of paramGrid, each corresponds to a set of parameters.
-for j in range(np.shape(paramGrid)[0]):
+for j in range(276, np.shape(paramGrid)[0]):
     alpha, gamma, kf, kr, baseLine = paramGrid[j]
 
     i = 0

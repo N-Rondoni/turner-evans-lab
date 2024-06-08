@@ -14,7 +14,7 @@ from datetime import date
 import spikefinder_eval as se
 from spikefinder_eval import _downsample
 
-
+save = True
 
 def plotCorrelations(factors, corrCoefs, neuron, dset):
     plt.figure()
@@ -43,12 +43,13 @@ def plotCorrelations(factors, corrCoefs, neuron, dset):
     ax2.set_xlabel("Bin width (ms)", fontsize=20)
    
     fig.tight_layout()
-    print(corrCoefs)
-    
-    filename = 'CorrCoef_dset'+ str(dset) + "_neuron" + str(neuron)
-    plt.savefig(filename)
-    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-    os.system('rm ' + filename + '.png')
+
+    print('dset:', dset, 'neuron:', neuron, "corr:", corrCoefs[0])
+    if save == True:
+        filename = 'CorrCoef_dset'+ str(dset) + "_neuron" + str(neuron)
+        plt.savefig(filename)
+        os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+        os.system('rm ' + filename + '.png')
     
 
 def plotSignalsSubset(t, simSignal, trueSignal, sStart, sStop, neuron, dset):
@@ -59,11 +60,12 @@ def plotSignalsSubset(t, simSignal, trueSignal, sStart, sStop, neuron, dset):
     plt.ylabel(r'$s$', fontsize = 14)
     plt.title("Subset of Expected and Recorded Spikes, dataset " + str(dset) + " neuron " + str(neuron))
     plt.legend()
- 
-    filename = 'Spikes_subset_dset'+ str(dset) + "_neuron" + str(neuron)
-    plt.savefig(filename)
-    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-    os.system('rm ' + filename + '.png')
+    
+    if save == True:
+        filename = 'Spikes_subset_dset'+ str(dset) + "_neuron" + str(neuron)
+        plt.savefig(filename)
+        os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+        os.system('rm ' + filename + '.png')
     #os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim')#/dset' + str(dset) +'/neuron' + str(neuron)) this line saves loose into the folder 
 
 def plotSignals(t, simSignal, trueSignal, neuron, dset):
@@ -75,10 +77,11 @@ def plotSignals(t, simSignal, trueSignal, neuron, dset):
     plt.title("Expected and Recorded Spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
 
-    filename = 'Spikes_fullSolve_dset'+ str(dset) + "_neuron" + str(neuron)
-    plt.savefig(filename)
-    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-    os.system('rm ' + filename + '.png')
+    if save == True:
+        filename = 'Spikes_fullSolve_dset'+ str(dset) + "_neuron" + str(neuron)
+        plt.savefig(filename)
+        os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+        os.system('rm ' + filename + '.png')
     #
 
 
@@ -103,7 +106,8 @@ if __name__=="__main__":
    
     # load in actual truth data
     dsets = [1, 2, 3, 4, 5]
-
+    tempSum = 0
+    counter = 0
     for dset in dsets:
         # load in true spikes
         file_path2 = 'data/' + str(dset) + '.test.spikes.csv'
@@ -126,9 +130,13 @@ if __name__=="__main__":
                 simSpikesRaw = np.ndarray.flatten(simSpikesRaw)        
                 n = np.max(np.shape(spikeDatRaw))
                 finalTime = n*(1/59.1)
- 
+                
+
                 # scale firing rate down so we can see what is happening. Avoid transients, hard to see.
                 simSpikesRaw = (np.max(spikeDatRaw[200:])/np.max(simSpikesRaw[200:]))*simSpikesRaw # correlation coeff. invariant wrt scaling.     
+                
+                #simSpikesRaw = np.round(simSpikesRaw)
+               
 
                 # create corr coeff
                 factors = [4, 8, 16, 32]
@@ -138,9 +146,10 @@ if __name__=="__main__":
                     spikeDatDown = _downsample(spikeDatRaw, factor)
                     simSpikeDown = _downsample(simSpikesRaw, factor)
                     corrCoefs[j] = np.corrcoef(spikeDatDown, simSpikeDown)[0, 1] # toss first 200 time instants, contains bad transients.
-                    corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
-            
-
+                    #corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
+                    if j == 0:
+                        tempSum = tempSum + corrCoefs[0]
+                        counter = counter + 1   
                 # set up time to match, note final time is still computed with undownsampled n. Only use this time Vec for testing to be safe.
                 n1 = min([len(spikeDatDown), len(simSpikeDown)])
                 t_f = np.linspace(0, finalTime, n1)
@@ -157,6 +166,8 @@ if __name__=="__main__":
                 #print(np.shape(t_f), np.shape(simSpikeDown), np.shape(spikeDatDown))
 
                 i = i + 1 
+
+    print("average:", tempSum/counter)
 
     #plt.show()
 

@@ -268,7 +268,7 @@ if __name__=="__main__":
 #    plt.savefig(filename)
 #    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-
+    
     plt.figure(4)
     plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
     plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
@@ -276,7 +276,13 @@ if __name__=="__main__":
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
     plt.legend()
-    filename = 'CRE_fig4_' + str(row) + '.png'
+    filename = 'Tracking_dset'+ str(dset) + "_neuron" + str(row)
+    plt.savefig(filename)
+    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(row)) # only run with this line uncommented if you are Nick
+    os.system('rm ' + filename + '.png')
+    
+
+
 #    plt.savefig(filename)
 #    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
@@ -366,5 +372,5 @@ if __name__=="__main__":
     plt.ylabel(r'$s$', fontsize = 14)
     plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
     plt.legend()
-
+    
     #plt.show()

@@ -9,9 +9,9 @@ from spikeCounter import spikeCounter
 from spikefinder_eval import _downsample
 
 
-#dsets = [1, 3, 5] #dset 1, row 1 has NaN
+dsets = [1,2, 3, 4, 5] #dset 1, row 1 has NaN
 #dsets = [5]
-dsets = [2, 4]
+#dsets = [2, 4]
 
 for dset in dsets:
     file_path = 'data/' + str(dset) + '.test.calcium.csv'
