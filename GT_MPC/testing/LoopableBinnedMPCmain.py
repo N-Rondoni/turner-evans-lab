@@ -10,7 +10,6 @@ import time
 import do_mpc
 from casadi import *
 import pandas as pd
-from spikeCounter import spikeCounter
 import seaborn as sns
 from datetime import date
 import spikefinder_eval as se
@@ -25,11 +24,11 @@ def tvp_fun_sim(t_now):
     tvp_template1['Ci_m'] = np.interp(t_now, timeVec, CI_Meas)
     return tvp_template1
 
-def plotThreeLines(x, y1, y2, y3):
+def plotTwoLines(x, y1, y2):
     plt.figure(1)
     plt.plot(x, y1, '--', linewidth = 1, label = r'$Ca^{2+}$ (mol)')
-    plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$ (mol)')
-    plt.plot(x, y3, linewidth = 2, label = r'$CI^{*}$ (mol)')
+    #plt.plot(x, y2, '--', linewidth = 1, label = r'$CI$ (mol)')
+    plt.plot(x, y2, linewidth = 2, label = r'$CI^{*}$ (mol)')
     plt.title('Dynamics Derived from CRN', fontsize = 18)
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'Concentration', fontsize = 14)
@@ -83,17 +82,13 @@ if __name__=="__main__":
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
     subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
-    #subsetAmount = 1000
+    #subsetAmount = 2000
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
-    
-
+    n = CI_Meas.shape[0]
+    print(n)
     #print(np.shape(CI_Meas))
 
-
-    # looks at a single neuron.  
-    #CI_Meas = 50*CI_Meas
-    #print(CI_Meas)
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
@@ -158,7 +153,7 @@ if __name__=="__main__":
     mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
     
-    #
+    
     #lterm = .001*model.u['s']**2 #+ (model.x['CiF'] - model.tvp['Ci_m'])**2 # stage cost 
     lterm = mterm
 
@@ -172,12 +167,7 @@ if __name__=="__main__":
     mpc.set_tvp_fun(tvp_fun)
 
 
-    # define constraints
-    #mpc.bounds['lower', '_x', 'Ca'] = 0.0
-    #mpc.bounds['lower', '_x', 'Ci'] = 0.0
-    #mpc.bounds['lower', '_x', 'CiF'] = 0.0
     mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
-#    mpc.bounds['upper', '_u', 's'] = 100
    
     # once mpc.setup() is called, no model parameters can be changed.
     mpc.setup()
@@ -233,7 +223,8 @@ if __name__=="__main__":
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
 
-    plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
+    #plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
+    plotTwoLines(t_f, Ca_f, CiF_f)
     plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
 
 
@@ -253,28 +244,6 @@ if __name__=="__main__":
 #    plt.savefig(filename)
 #    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-
-    plt.figure(4)
-    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
-    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
-    plt.title(r'$CI^{*}$, simulated and measured')
-    plt.xlabel(r'$t$', fontsize = 14)
-    plt.ylabel(r'CI', fontsize = 14)
-    plt.legend()
-    filename = 'CRE_fig4_' + str(row) + '.png'
-#    plt.savefig(filename)
-#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
-
-
-    #plt.figure(5)
-    #plt.plot(t_f, s, label=r'$s (Hz)$')
-    #plt.title(r'Signal s (maybe Hz)')
-    #plt.xlabel(r'$t$', fontsize = 14)
-    #plt.ylabel(r'$s$', fontsize = 14)
-    #plt.legend()
-    #filename = 'CRE_fig5_' + str(row) + '.png'
-#    plt.savefig(filename)
-#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
 
     #sys.exit()
@@ -339,8 +308,8 @@ if __name__=="__main__":
 
     neuron = row
     plt.figure(4)
-    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
     plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
+    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$', alpha = 0.7)
     plt.title(r'$CI^{*}$, simulated and measured')
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
@@ -350,9 +319,12 @@ if __name__=="__main__":
     os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
     os.system('rm ' + filename + '.png')
 
+    
+    subL, subH = 500, 1000
+
     plt.figure(5)
-    plt.plot(t_f[2000:4000], CI_Meas_interp[2000:4000], label=r'$CI^{*}_{Meas}$')
-    plt.plot(t_f[2000:4000], CiF_f[2000:4000], label=r'$CI^{*}_{Sim}$') ## subtracting baseline
+    plt.plot(t_f[subL:subH], CiF_f[subL:subH], label=r'$CI^{*}_{Sim}$') ## subtracting baseline
+    plt.plot(t_f[subL:subH], CI_Meas_interp[subL:subH], label=r'$CI^{*}_{Meas}$', alpha = 0.7)
     plt.title(r'$CI^{*}$, simulated and measured')
     plt.xlabel(r'$t$', fontsize = 14)
     plt.ylabel(r'CI', fontsize = 14)
@@ -362,14 +334,22 @@ if __name__=="__main__":
     os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
     os.system('rm ' + filename + '.png')
 
-    #plt.figure(6)
-    #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         these explode as soon as len(timeVec) isn't evenly divisible by factor
+    plt.figure(6)
+    subL, subH = int(subL/factor), int(subH/factor)
+    #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         #these explode as soon as len(timeVec) isn't evenly divisible by factor
     #plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
-    #plt.plot(newTime, s, label=r'Simulated Rate')
-    #plt.plot(newTime, spikeDat, label="Recorded Spike Rate")
-    #plt.xlabel(r'$t$', fontsize = 14)
-    #plt.ylabel(r'$s$', fontsize = 14)
-    #plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
+    plt.plot(newTime[subL:subH], s[subL:subH], label=r'Simulated Rate')
+    plt.plot(newTime[subL:subH], spikeDat[subL:subH], label="Recorded Spike Rate", alpha = 0.7)
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'$s$', fontsize = 14)
+    plt.legend()
+    plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
+    filename = 'Spikes_dset'+ str(dset) + "_neuron" + str(neuron)
+    plt.savefig(filename)
+    os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+    os.system('rm ' + filename + '.png')
+
+
     #plt.legend()
 
     plt.show()
