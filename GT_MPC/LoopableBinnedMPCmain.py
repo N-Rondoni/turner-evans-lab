@@ -66,18 +66,6 @@ def plotErr(x, y):
     #plt.savefig(filename)
     #os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-def sigma(s):
-    # this is what the authors use to go from energy -> hz
-    a = 6.34
-    beta = 0.8
-    b = 10
-    c = 0.5
-    
-    out = np.zeros(len(s))
-    for i in range(len(s)):
-        out[i] = a*np.log(1 + np.exp(b*(s[i] + c)))**beta
-    return out
-
 
 
 
@@ -95,7 +83,7 @@ if __name__=="__main__":
     data1 = np.array(data1)
     # calcium data is so large, start with a subset.
     subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
-    #subsetAmount = 2000
+    #subsetAmount = 1000
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
     
@@ -131,21 +119,11 @@ if __name__=="__main__":
     CiF = model.set_variable('_x', 'CiF')
 
     # define ODEs and parameters, kr << kf
-    if dset in [1, 2, 4]:
-        kf = 0.032
-        kr = 8      # this is kr: 1 kf: .004 = (1/.250)*(1/1000) (to be in microMolar) ratio. upped a lil
-        alpha = 20 
-        gamma = 0.1 
-        baseLine = 1
-
-    if dset in [3, 5]:
-        kf = 0.5555555555555
-        kr = 8 # this is the kr:1 to kf:.006944 ratio, just x8 because alpha and gamma were scalled for around this regieme.
-        alpha = 20 
-        gamma = 0.1 
-        baseLine = 1
-                       
-    L = CiF_0 + 7      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    kf = 0.0513514
+    kr = 7.6 
+    alpha = 20 
+    gamma = 0.1   # passive diffusion
+    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
@@ -156,7 +134,8 @@ if __name__=="__main__":
     model.setup()
     mpc = do_mpc.controller.MPC(model)
 
-    # Optimizer parameters, can change collocation/state discretization here. 
+    # Optimizer parameters, can change collocation/state discretization here.
+    # does not impact my actual horizon or stepsize for simulation? 
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
             't_step': 1/59.1, # (s)
@@ -175,10 +154,11 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
+    baseLine = 1 # 2.5 was nice for row 2
     mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
     
-    
+    #
     #lterm = .001*model.u['s']**2 #+ (model.x['CiF'] - model.tvp['Ci_m'])**2 # stage cost 
     lterm = mterm
 
@@ -193,8 +173,12 @@ if __name__=="__main__":
 
 
     # define constraints
-    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion if negative?
-  
+    #mpc.bounds['lower', '_x', 'Ca'] = 0.0
+    #mpc.bounds['lower', '_x', 'Ci'] = 0.0
+    #mpc.bounds['lower', '_x', 'CiF'] = 0.0
+    mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
+#    mpc.bounds['upper', '_u', 's'] = 100
+   
     # once mpc.setup() is called, no model parameters can be changed.
     mpc.setup()
     
@@ -240,23 +224,60 @@ if __name__=="__main__":
     CiF_f = mpc.data['_x'][:, 1]
     t_f = mpc.data['_time']
     s = mpc.data['_u']
- 
-
+   
     Ci_f = L - CiF_f
-    print("min pre baseline:", np.min(CiF_f))
     CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
-    print("min post baseline:", np.min(CiF_f))
 
-    #print("Data shape:", np.shape(mpc.data['_x']))
+    print("Data shape:", np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
 
-   
+    #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
+
+    plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
+    plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
+
+
     # check error between Ci_M and Ci_sim
     CI_Meas_interp = np.interp(t_f, timeVec, CI_Meas)
     CI_Meas_interp = CI_Meas_interp[:, 0] # CiF_f different shape
     print("Relative MSE of tracking:", np.linalg.norm(CI_Meas_interp - CiF_f)/len(CiF_f))
 
 
+
+    plt.figure(3)    
+    plt.plot(t_f, (CI_Meas_interp - CiF_f))
+    plt.title(r'Error as a function of time')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'$CI^{*}_{Meas} - CI^*_{Sim}$', fontsize = 14)
+    filename = 'CRE_fig3_' + str(row) + '.png'
+#    plt.savefig(filename)
+#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
+    plt.figure(4)
+    plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
+    plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
+    plt.title(r'$CI^{*}$, simulated and measured')
+    plt.xlabel(r'$t$', fontsize = 14)
+    plt.ylabel(r'CI', fontsize = 14)
+    plt.legend()
+    filename = 'CRE_fig4_' + str(row) + '.png'
+#    plt.savefig(filename)
+#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
+    #plt.figure(5)
+    #plt.plot(t_f, s, label=r'$s (Hz)$')
+    #plt.title(r'Signal s (maybe Hz)')
+    #plt.xlabel(r'$t$', fontsize = 14)
+    #plt.ylabel(r'$s$', fontsize = 14)
+    #plt.legend()
+    #filename = 'CRE_fig5_' + str(row) + '.png'
+#    plt.savefig(filename)
+#    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
+
+
+    #sys.exit()
     # load in actual truth data
     file_path2 = 'data/' + str(dset) + '.test.spikes.csv'
     spikeDat = pd.read_csv(file_path2).T #had to figure out why data class is flyDat from print(mat). No clue. 
@@ -276,12 +297,18 @@ if __name__=="__main__":
 
     # remove NaNs AT START
     s = np.array(s[:,0]) # gotta reshape s 
+    naninds = np.isnan(spikeDatRaw) | np.isnan(s)
+    #print("nanID shape:", np.shape(naninds))
+    #print("spikeDatRaw shape:", np.shape(spikeDatRaw))
+    #print("shape of s", np.shape(s))
+    #print(spikeDatRaw)
+    spikeDatRaw = spikeDatRaw[~naninds]
+    s = s[~naninds]
+    #print(spikeDatRaw)
     
-    #naninds = np.isnan(spikeDatRaw) | np.isnan(s)
-    #spikeDatRaw = spikeDatRaw[~naninds]
-    #s = s[~naninds]
+    #print("SpikeDat post nan removal", np.shape(spikeDatRaw))
+    #print("s shape post nan removal", np.shape(s))
     
-   
     factor= 4#32 #how much to downsample by
     spikeDat = _downsample(spikeDatRaw, factor)
     s = _downsample(s, factor)
@@ -301,9 +328,7 @@ if __name__=="__main__":
 
        
     # finally scale so viewing is more clear
-    # pick a subset because transients are usually bad
-    prettySubset = 300
-    s = (np.max(spikeDat[prettySubset:])/np.max(s[prettySubset:]))*s # correlation coeff. invariant wrt scaling. 
+    s = (np.max(spikeDat)/np.max(s))*s # correlation coeff. invariant wrt scaling. 
 
     # compute correlation coefficient -----------------------------------------------
     #interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
@@ -312,19 +337,7 @@ if __name__=="__main__":
     corrCoef = np.corrcoef(s, spikeDat)[0, 1] # toss first 200 time instants, contains bad transients.
     print("Corr Coef, no interp:", corrCoef)     # ---------------------------------------------
 
-    #plt.figure(3)    
-    #plt.plot(t_f, (CI_Meas_interp - CiF_f))
-    #plt.title(r'Error as a function of time')
-    #plt.xlabel(r'$t$', fontsize = 14)
-    #plt.ylabel(r'$CI^{*}_{Meas} - CI^*_{Sim}$', fontsize = 14)
-    #filename = 'Tracking_Error_dset'+ str(dset) + "_neuron" + str(row)
-    #plt.savefig(filename)
-    #os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-    #os.system('rm ' + filename + '.png')
-
-    
     neuron = row
-
     plt.figure(4)
     plt.plot(t_f, CI_Meas_interp, label=r'$CI^{*}_{Meas}$')
     plt.plot(t_f, CiF_f, label=r'$CI^{*}_{Sim}$') ## subtracting baseline
@@ -348,4 +361,16 @@ if __name__=="__main__":
     plt.savefig(filename)
     os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
     os.system('rm ' + filename + '.png')
-    #plt.show()
+
+    #plt.figure(6)
+    #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         these explode as soon as len(timeVec) isn't evenly divisible by factor
+    #plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
+    #plt.plot(newTime, s, label=r'Simulated Rate')
+    #plt.plot(newTime, spikeDat, label="Recorded Spike Rate")
+    #plt.xlabel(r'$t$', fontsize = 14)
+    #plt.ylabel(r'$s$', fontsize = 14)
+    #plt.title("Expected and Recorded spikes")#, bin size of " + str(1000*binSizeTime) + " ms")
+    #plt.legend()
+
+    plt.show()
+

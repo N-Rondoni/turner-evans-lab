@@ -118,6 +118,16 @@ if __name__=="__main__":
         #spikeDat = spikeDat[:, :subsetAmount]
         mSpike,nSpike = spikeDat.shape
 
+        # set imrate depending on dset
+        if dset == 1:
+            imRate = 1/322.5
+        if dset == 2:
+            imRate = 1/11.8
+        if dset in [3, 5]:
+            imRate = 1/59.1
+        if dset == 4:
+            imRate = 1/7.8
+
         i = 0
         while i < mSpike:
             # if NaNs in calcium dataset, ignore and step to the next.
@@ -129,7 +139,7 @@ if __name__=="__main__":
                 simSpikesRaw = np.load('data/s_node_'+ str(i) + 'dset_' + str(dset) + '.npy')
                 simSpikesRaw = np.ndarray.flatten(simSpikesRaw)        
                 n = np.max(np.shape(spikeDatRaw))
-                finalTime = n*(1/59.1)
+                finalTime = n*(imRate)
                 
 
                 # scale firing rate down so we can see what is happening. Avoid transients, hard to see.
