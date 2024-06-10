@@ -71,25 +71,31 @@ def plotErr(x, y):
 if __name__=="__main__":
     # frequently changed parameters:
     penalty = 0.01
-    #row = 4 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
-    #dset = 5
     row = int(sys.argv[1])   
     dset = int(sys.argv[2])
     
     file_path = 'data/' + str(dset) + '.test.calcium.csv'
     data1 = pd.read_csv(file_path).T 
-
     data1 = np.array(data1)
-    # calcium data is so large, start with a subset.
-    subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
+
+    
+    # calcium data is so large, pull a subset or use whole solve with max call.
+    subsetAmount = np.max(np.shape(data1[row,:])) 
+    print("subamount:", subsetAmount)
     #subsetAmount = 2000
+
+    # check and remove NaNs
+    naninds = np.isnan(data1[row,:])
+    NaNpresent = np.any(naninds)
+    if NaNpresent == True:
+        subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
+    print("after nan cut off", subsetAmount)
+
+    
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
     n = CI_Meas.shape[0]
-    print(n)
-    #print(np.shape(CI_Meas))
-
-
+   
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
     print("Simulating until final time", tEnd, "seconds, consisting of", n, "data points")
@@ -108,7 +114,6 @@ if __name__=="__main__":
     model = do_mpc.model.Model(model_type)
     
     # states struct, optimization variables
-    # S is an unknown parameter. _x denotes var, _p param?
     Ca = model.set_variable('_x', 'Ca')
 #    Ci = model.set_variable('_x', 'Ci') #
     CiF = model.set_variable('_x', 'CiF')
@@ -117,20 +122,32 @@ if __name__=="__main__":
     kf = 0.0513514
     kr = 7.6 
     alpha = 20 
-    gamma = 0.1   # passive diffusion
-    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    gamma = 1   # passive diffusion
+    L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    baseLine = 2 # 2.5 was nice for row 2
+
+    #if dset == 4:
+    #    kf = 0.05
+    #    kr = 10 
+    #    alpha = 16.6666 
+    #    gamma = 0.7333   # passive diffusion
+    #    L = CiF_0 + 7      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    #    baseLine = 1 # 2.5 was nice for row 2
+
+
+
+
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
     model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ca*(L - CiF))
 #   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
-    model.set_rhs('CiF', kf*Ca*(L - CiF) - kr*CiF)
+    model.set_rhs('CiF', (kf*Ca*(L - CiF) - kr*CiF))
    
     model.setup()
     mpc = do_mpc.controller.MPC(model)
 
     # Optimizer parameters, can change collocation/state discretization here.
-    # does not impact my actual horizon or stepsize for simulation? 
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
             't_step': 1/59.1, # (s)
@@ -149,7 +166,6 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
-    baseLine = 1 # 2.5 was nice for row 2
     mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
     #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
     
@@ -225,7 +241,7 @@ if __name__=="__main__":
 
     #plotThreeLines(t_f, Ca_f, Ci_f, CiF_f)
     plotTwoLines(t_f, Ca_f, CiF_f)
-    plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
+    #plotFourLines(t_f, Ca_f, Ci_f, CiF_f, s)
 
 
     # check error between Ci_M and Ci_sim
@@ -245,8 +261,6 @@ if __name__=="__main__":
 #    os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
 
-
-    #sys.exit()
     # load in actual truth data
     file_path2 = 'data/' + str(dset) + '.test.spikes.csv'
     spikeDat = pd.read_csv(file_path2).T #had to figure out why data class is flyDat from print(mat). No clue. 
@@ -303,7 +317,7 @@ if __name__=="__main__":
     #interpS = np.interp(timeVec[::factor], t_f[::factor,0], s)
     #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
     #print("interp coeff:", corrCoef) -----------------------------------------------
-    corrCoef = np.corrcoef(s, spikeDat)[0, 1] # toss first 200 time instants, contains bad transients.
+    corrCoef = np.corrcoef(s[300:], spikeDat[300:])[0, 1] # toss first 200 time instants, contains bad transients.
     print("Corr Coef, no interp:", corrCoef)     # ---------------------------------------------
 
     neuron = row
@@ -336,8 +350,6 @@ if __name__=="__main__":
 
     plt.figure(6)
     subL, subH = int(subL/factor), int(subH/factor)
-    #plt.plot(t_f[::factor, 0], s, label=r'Simulated Rate')         #these explode as soon as len(timeVec) isn't evenly divisible by factor
-    #plt.plot(timeVec[::factor], spikeDat, label="Recorded Spike")
     plt.plot(newTime[subL:subH], s[subL:subH], label=r'Simulated Rate')
     plt.plot(newTime[subL:subH], spikeDat[subL:subH], label="Recorded Spike Rate", alpha = 0.7)
     plt.xlabel(r'$t$', fontsize = 14)

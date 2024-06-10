@@ -84,12 +84,12 @@ kr_values = data['kr']
 bl_values = data['bl']
 
 i = maxIndex
-print(corrs[i], node_values[i], dset_values[i], alpha_values[i], gamma_values[i], kf_values[i], kr_values[i], bl_values[i])
+print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
 
 counter = 0
 for i in range(len(corrs)):
-    if corrs[i] >= .3:
-        print(corrs[i], node_values[i], dset_values[i], alpha_values[i], gamma_values[i], kf_values[i], kr_values[i], bl_values[i])
+    if corrs[i] >= .25:
+        print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
         counter = counter + 1
 
 print("# with cor score greater than 0.3", counter)

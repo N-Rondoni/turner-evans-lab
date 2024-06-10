@@ -30,16 +30,14 @@ for dset in dsets:
         NaNpresent = np.any(naninds)
 
         if NaNpresent == True:
-            print("This neuron's data contains NaNs! Skiping to next... ")
-            print("------------------------------------------------------------------------")
-            i = i + 1
-        else:
-            # run solver if no NaNs present.
-            os.system("python3 LoopableBinnedMPCmain.py " + str(i) + " " + str(dset))
-            end = time.time()
-            print("previous solve for neuron", i, "completed in", (end - start)/60, "minutes")
-            print("------------------------------------------------------------------------")
-            i = i + 1
+            print("This neuron's data contains NaNs! Solving up until NaNs begin... ") 
+            
+        # run solver, if NaNs present main will simulate up until they begin. 
+        os.system("python3 LoopableBinnedMPCmain.py " + str(i) + " " + str(dset))
+        end = time.time()
+        print("previous solve for neuron", i, "completed in", (end - start)/60, "minutes")
+        print("------------------------------------------------------------------------")
+        i = i + 1
 
 
 
