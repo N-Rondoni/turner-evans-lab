@@ -8,7 +8,6 @@ import time
 import do_mpc
 from casadi import *
 import pandas as pd
-from spikeCounter import spikeCounter
 import seaborn as sns
 from datetime import date
 import spikefinder_eval as se
@@ -119,68 +118,72 @@ if __name__=="__main__":
         mSpike,nSpike = spikeDat.shape
 
         # set imrate depending on dset
-        if dset == 1:
-            imRate = 1/322.5
-        if dset == 2:
-            imRate = 1/11.8
-        if dset in [3, 5]:
-            imRate = 1/59.1
-        if dset == 4:
-            imRate = 1/7.8
-
+        #if dset == 1:
+        #    imRate = 1/322.5
+        #if dset == 2:
+        #    imRate = 1/11.8
+        #if dset in [3, 5]:
+        #    imRate = 1/59.1
+        #if dset == 4:
+        #    imRate = 1/7.8
+        imRate = 1/59.1
+    
         i = 0
         while i < mSpike:
             # if NaNs in calcium dataset, ignore and step to the next.
             if NaNChecker(dset, i) == True:
-                i = i + 1
+                naninds = np.isnan(spikeDat[i,:])
+                subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
             else:
-                spikeDatRaw = spikeDat[i, :]
+                subsetAmount = np.max(np.shape(spikeDat[i,:]))
 
-                simSpikesRaw = np.load('data/s_node_'+ str(i) + 'dset_' + str(dset) + '.npy')
-                simSpikesRaw = np.ndarray.flatten(simSpikesRaw)        
-                n = np.max(np.shape(spikeDatRaw))
-                finalTime = n*(imRate)
-                
+            spikeDatRaw = spikeDat[i, :subsetAmount]
 
-                # scale firing rate down so we can see what is happening. Avoid transients, hard to see.
-                simSpikesRaw = (np.max(spikeDatRaw[200:])/np.max(simSpikesRaw[200:]))*simSpikesRaw # correlation coeff. invariant wrt scaling.     
-                
-                #simSpikesRaw = np.round(simSpikesRaw)
-               
+            simSpikesRaw = np.load('data/s_node_'+ str(i) + 'dset_' + str(dset) + '.npy')
+            simSpikesRaw = np.ndarray.flatten(simSpikesRaw)        
+            n = np.max(np.shape(spikeDatRaw))
+            finalTime = n*(imRate)
+            
 
-                # create corr coeff
-                factors = [4, 8, 16, 32]
-                corrCoefs = np.zeros(np.shape(factors))
-                for j in range(len(factors)):
-                    factor = factors[j]
-                    spikeDatDown = _downsample(spikeDatRaw, factor)
-                    simSpikeDown = _downsample(simSpikesRaw, factor)
-                    corrCoefs[j] = np.corrcoef(spikeDatDown, simSpikeDown)[0, 1] # toss first 200 time instants, contains bad transients.
-                    #corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
-                    if j == 0:
-                        tempSum = tempSum + corrCoefs[0]
-                        counter = counter + 1   
-                # set up time to match, note final time is still computed with undownsampled n. Only use this time Vec for testing to be safe.
-                n1 = min([len(spikeDatDown), len(simSpikeDown)])
-                t_down = np.linspace(0, finalTime, n1)
-                timeVec = np.linspace(0, finalTime, n)
-                neuron = i
-               
-     
+            # scale firing rate down so we can see what is happening. Avoid transients, hard to see.
+            simSpikesRaw = (np.max(spikeDatRaw[200:])/np.max(simSpikesRaw[200:]))*simSpikesRaw # correlation coeff. invariant wrt scaling.     
+            
+            #simSpikesRaw = np.round(simSpikesRaw)
+           
 
-                # finally call plot functions
-                plotCorrelations(factors, corrCoefs, neuron, dset) 
-                #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
-                #subStart, subStop = 200, 400
-                #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
-                subStart, subStop = 2000, 4000
-                plotSignals(timeVec, simSpikesRaw, spikeDatRaw, neuron, dset)
-                plotSignalsSubset(timeVec, simSpikesRaw, spikeDatRaw, subStart, subStop, neuron, dset)
+            # create corr coeff
+            factors = [4, 8, 16, 32]
+            corrCoefs = np.zeros(np.shape(factors))
+            for j in range(len(factors)):
+                factor = factors[j]
+                spikeDatDown = _downsample(spikeDatRaw, factor)
+                simSpikeDown = _downsample(simSpikesRaw, factor)
+                corrCoefs[j] = np.corrcoef(spikeDatDown, simSpikeDown)[0, 1] # toss first 200 time instants, contains bad transients.
+                #corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
+                if j == 0:
+                    tempSum = tempSum + corrCoefs[0]
+                    counter = counter + 1   
+            # set up time to match, note final time is still computed with undownsampled n. Only use this time Vec for testing to be safe.
+            n1 = min([len(spikeDatDown), len(simSpikeDown)])
+            t_down = np.linspace(0, finalTime, n1)
+            timeVec = np.linspace(0, finalTime, n)
+            neuron = i
+           
+ 
 
-                #print(np.shape(t_f[subStart:subStop]), np.shape(simSpikeDown[subStart:subStop]), np.shape(spikeDatDown[subStart:subStop]))
-                #print(np.shape(t_f), np.shape(simSpikeDown), np.shape(spikeDatDown))
+            # finally call plot functions
+            plotCorrelations(factors, corrCoefs, neuron, dset) 
+            #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
+            #subStart, subStop = 200, 400
+            #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
+            subStart, subStop = 2000, 4000
+            plotSignals(timeVec, simSpikesRaw, spikeDatRaw, neuron, dset)
+            plotSignalsSubset(timeVec, simSpikesRaw, spikeDatRaw, subStart, subStop, neuron, dset)
 
-                i = i + 1 
+            #print(np.shape(t_f[subStart:subStop]), np.shape(simSpikeDown[subStart:subStop]), np.shape(spikeDatDown[subStart:subStop]))
+            #print(np.shape(t_f), np.shape(simSpikeDown), np.shape(spikeDatDown))
+
+            i = i + 1 
 
     print("average:", tempSum/counter)
 

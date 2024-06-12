@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import pandas as pd
-from spikeCounter import spikeCounter
 from spikefinder_eval import _downsample
 
 

@@ -127,6 +127,15 @@ if __name__=="__main__":
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
     baseLine = 1 # 2.5 was nice for row 2
+    
+    if dset == 5: # params found from BFS
+        kf = 0.2
+        kr = 10 
+        alpha = 10 
+        gamma = 0.73333   # passive diffusion
+        L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        baseLine = 0.5 # 2.5 was nice for row 2
+
 
     model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ca*(L - CiF))
 #   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)

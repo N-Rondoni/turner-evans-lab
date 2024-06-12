@@ -70,10 +70,9 @@ corrs = np.zeros(len(corrsList))
 for i in range(len(corrsList)):
     corrs[i] = float(corrsList[i])
 
-print(np.max(corrs))
-
+#print(np.max(corrs))
 maxIndex = np.argmax(corrs)
-print(corrs[maxIndex])
+#print(corrs[maxIndex])
 
 node_values = data['node']
 dset_values = data['dset']
@@ -83,14 +82,36 @@ kf_values = data['kf']
 kr_values = data['kr']
 bl_values = data['bl']
 
+
+
 i = maxIndex
 print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
 
 counter = 0
 for i in range(len(corrs)):
-    if corrs[i] >= .25:
-        print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
+    if corrs[i] >= .3:
+        #print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
         counter = counter + 1
+
+corrsDset3 = []
+print("dset 3 exploration")
+for i in range(len(corrs)):
+    if dset_values[i] == str(3):
+        #print(dset_values)
+        corrsDset3 = np.append(corrsDset3, corrs[i])
+
+corrsDset2 = []
+print("dset 2 exploration")
+for i in range(len(corrs)):
+    if dset_values[i] == str(2):
+        #print(dset_values)
+        corrsDset2 = np.append(corrsDset2, corrs[i])
+
+
+print(np.max(corrsDset2))
+        #print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
+
+
 
 print("# with cor score greater than 0.3", counter)
 

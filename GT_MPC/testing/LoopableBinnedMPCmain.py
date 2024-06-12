@@ -81,7 +81,7 @@ if __name__=="__main__":
     
     # calcium data is so large, pull a subset or use whole solve with max call.
     subsetAmount = np.max(np.shape(data1[row,:])) 
-    print("subamount:", subsetAmount)
+    #print("subamount:", subsetAmount)
     #subsetAmount = 2000
 
     # check and remove NaNs
@@ -89,7 +89,7 @@ if __name__=="__main__":
     NaNpresent = np.any(naninds)
     if NaNpresent == True:
         subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
-    print("after nan cut off", subsetAmount)
+    #print("after nan cut off", subsetAmount)
 
     
     m, n = data1.shape
@@ -121,26 +121,35 @@ if __name__=="__main__":
     # define ODEs and parameters, kr << kf
     kf = 0.0513514
     kr = 7.6 
-    alpha = 20 
-    gamma = 1   # passive diffusion
+    alpha = -20 
+    gamma = -1   # passive diffusion
     L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     baseLine = 2 # 2.5 was nice for row 2
 
-    #if dset == 4:
+    #if dset == 4: overfit, hurts other nodes
     #    kf = 0.05
     #    kr = 10 
     #    alpha = 16.6666 
     #    gamma = 0.7333   # passive diffusion
     #    L = CiF_0 + 7      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     #    baseLine = 1 # 2.5 was nice for row 2
+    if dset == 5:
+        kf = 0.2
+        kr = 10 
+        alpha = -10 
+        gamma = -0.73333   # passive diffusion
+        L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        baseLine = 0.5 # 2.5 was nice for row 2
 
 
+    #.292995469758242 node: 1 dset: 5 alpha: 10.0 gamma: 0.7333333333333333 kf: 0.2 kr: 10.0 bl 0.5
 
 
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
+    Ca_ext = 40
 
-    model.set_rhs('Ca', alpha*s - gamma*Ca+ kr*CiF - kf*Ca*(L - CiF))
+    model.set_rhs('Ca', alpha*s - gamma*(Ca_ext - Ca) + kr*CiF - kf*Ca*(L - CiF))
 #   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
     model.set_rhs('CiF', (kf*Ca*(L - CiF) - kr*CiF))
    
@@ -364,5 +373,6 @@ if __name__=="__main__":
 
     #plt.legend()
 
-    plt.show()
+    
+    #plt.show()
 

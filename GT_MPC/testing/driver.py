@@ -5,12 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import pandas as pd
-from spikeCounter import spikeCounter
 from spikefinder_eval import _downsample
 
 
 dsets = [1,2, 3, 4, 5] #dset 1, row 1 has NaN
-#dsets = [5]
+dsets = [5]
 #dsets = [2, 4]
 
 for dset in dsets:
@@ -30,16 +29,14 @@ for dset in dsets:
         NaNpresent = np.any(naninds)
 
         if NaNpresent == True:
-            print("This neuron's data contains NaNs! Skiping to next... ")
-            print("------------------------------------------------------------------------")
-            i = i + 1
-        else:
-            # run solver if no NaNs present.
-            os.system("python3 LoopableBinnedMPCmain.py " + str(i) + " " + str(dset))
-            end = time.time()
-            print("previous solve for neuron", i, "completed in", (end - start)/60, "minutes")
-            print("------------------------------------------------------------------------")
-            i = i + 1
+            print("This neuron's data contains NaNs! Solving up until NaNs begin... ") 
+            
+        # run solver, if NaNs present main will simulate up until they begin. 
+        os.system("python3 LoopableBinnedMPCmain.py " + str(i) + " " + str(dset))
+        end = time.time()
+        print("previous solve for neuron", i, "completed in", (end - start)/60, "minutes")
+        print("------------------------------------------------------------------------")
+        i = i + 1
 
 
 

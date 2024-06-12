@@ -17,9 +17,9 @@ from spikefinder_eval import _downsample
 #dset 4, neuron 1
 #dset 5, neuron 1
 #dsets = [1, 2, 3, 4, 5] 
-#neurons = [0, 0, 1, 1, 1]
+#neurons = [0, 1, 1, 1, 1]
 
-dsets = [3, 4, 5]  # axe dset 1, we're doing good there. dset 2 too large
+dsets = [2, 3, 4]  # axe dset 1, we're doing good there. dset 2 too large
 neurons = [1, 1, 1]
 
 
@@ -43,7 +43,7 @@ paramGrid = np.stack(np.meshgrid(*[alphaSpace, gammaSpace, kfSpace, krSpace, bas
 
 
 # step through rows of paramGrid, each corresponds to a set of parameters.
-for j in range(276, np.shape(paramGrid)[0]):
+for j in range(585, np.shape(paramGrid)[0]):
     alpha, gamma, kf, kr, baseLine = paramGrid[j]
 
     i = 0

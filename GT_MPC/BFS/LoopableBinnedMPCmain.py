@@ -71,22 +71,29 @@ def plotErr(x, y):
 if __name__=="__main__":
     # frequently changed parameters:
     penalty = 0.01
-    #row = 4 # 6 has nans for testing, row 2 subsetAmount = 1000 is a great data subset tho. 
-    #dset = 5
     row = int(sys.argv[1])   
     dset = int(sys.argv[2])
     
     file_path = 'data/' + str(dset) + '.test.calcium.csv'
     data1 = pd.read_csv(file_path).T 
-
     data1 = np.array(data1)
-    # calcium data is so large, start with a subset.
-    subsetAmount = np.max(np.shape(data1[row,:])) # the way its set up, must be divisble by factor or stuff breaks. 
+
+    
+    # calcium data is so large, pull a subset or use whole solve with max call.
+    subsetAmount = np.max(np.shape(data1[row,:])) 
     #subsetAmount = 2000
+
+    # check and remove NaNs
+    naninds = np.isnan(data1[row,:])
+    NaNpresent = np.any(naninds)
+    if NaNpresent == True:
+        subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
+        #print("after nan cut off", subsetAmount)
+
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
-    
-
+    n = CI_Meas.shape[0]
+  
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
     print("Simulating until final time", tEnd, "seconds, consisting of", n, "data points")
