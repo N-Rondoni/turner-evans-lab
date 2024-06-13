@@ -66,7 +66,20 @@ def plotErr(x, y):
     #os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
 
+def movingAverage(signal, winLen):
+    wLen = winLen # window length
+    mAvg = np.zeros(np.shape(signal))
+    for i in range(len(mAvg) - wLen):
+        avg = np.sum(signal[i: i+ wLen])/wLen
+        mAvg[i] = avg
+    mAvg[-wLen:] = signal[-wLen:]
+    return mAvg
 
+
+def sigmoid(signal):
+    #sig = np.zeros(np.shape(signal)):
+    sig = 1/(1 + np.exp(-1*signal))
+    return sig
 
 if __name__=="__main__":
     # frequently changed parameters:
@@ -90,12 +103,15 @@ if __name__=="__main__":
     if NaNpresent == True:
         subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
     #print("after nan cut off", subsetAmount)
-
+    subsetAmount = 2000
     
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
     n = CI_Meas.shape[0]
-   
+  
+    #CI_Meas = movingAverage(CI_Meas, 30)
+    CI_Meas = sigmoid(CI_Meas)
+
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
     print("Simulating until final time", tEnd, "seconds, consisting of", n, "data points")
@@ -121,10 +137,10 @@ if __name__=="__main__":
     # define ODEs and parameters, kr << kf
     kf = 0.0513514
     kr = 7.6 
-    alpha = -20 
-    gamma = -1   # passive diffusion
-    L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-    baseLine = 2 # 2.5 was nice for row 2
+    alpha = 20 
+    gamma = 0.1  # passive diffusion
+    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    baseLine = 1 # 2.5 was nice for row 2
 
     #if dset == 4: overfit, hurts other nodes
     #    kf = 0.05
@@ -136,8 +152,8 @@ if __name__=="__main__":
     if dset == 5:
         kf = 0.2
         kr = 10 
-        alpha = -10 
-        gamma = -0.73333   # passive diffusion
+        alpha = 10 
+        gamma = 0.73333   # passive diffusion
         L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 0.5 # 2.5 was nice for row 2
 
@@ -149,7 +165,7 @@ if __name__=="__main__":
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
     Ca_ext = 40
 
-    model.set_rhs('Ca', alpha*s - gamma*(Ca_ext - Ca) + kr*CiF - kf*Ca*(L - CiF))
+    model.set_rhs('Ca', alpha*s - gamma*Ca + kr*CiF - kf*Ca*(L - CiF))
 #   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
     model.set_rhs('CiF', (kf*Ca*(L - CiF) - kr*CiF))
    
@@ -175,8 +191,8 @@ if __name__=="__main__":
 #    print(model.u.keys())
 
     # define objective, which is to miminize the difference between Ci_m and Ci.
-    mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
-    #mterm = (model.x['CiF'] - model.tvp['Ci_m'])**2                    # terminal cost
+    #mterm = ((model.x['CiF']-baseLine)/baseLine - model.tvp['Ci_m'])**2
+    mterm =(sigmoid(model.x['CiF']) - model.tvp['Ci_m'])**2                    # terminal cost
     
     
     #lterm = .001*model.u['s']**2 #+ (model.x['CiF'] - model.tvp['Ci_m'])**2 # stage cost 
@@ -240,8 +256,11 @@ if __name__=="__main__":
     t_f = mpc.data['_time']
     s = mpc.data['_u']
    
+    #s = movingAverage(s, 30)
+
     Ci_f = L - CiF_f
-    CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
+    #CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
+    CiF_f = sigmoid(CiF_f)
 
     print("Data shape:", np.shape(mpc.data['_x']))
     sol = np.transpose(mpc.data['_x'])
@@ -374,5 +393,5 @@ if __name__=="__main__":
     #plt.legend()
 
     
-    #plt.show()
+    plt.show()
 
