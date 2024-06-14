@@ -93,23 +93,61 @@ for i in range(len(corrs)):
         #print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
         counter = counter + 1
 
+corrsDset2 = []
+print("dset 2 exploration")
+for i in range(len(corrs)):
+    if dset_values[i] == str(2):
+        corrsDset2 = np.append(corrsDset2, corrs[i])
+        if corrs[i] >= .39: 
+            print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
+
+print("dset 2:", np.max(corrsDset2))
+ 
+
+
 corrsDset3 = []
 print("dset 3 exploration")
 for i in range(len(corrs)):
     if dset_values[i] == str(3):
         #print(dset_values)
         corrsDset3 = np.append(corrsDset3, corrs[i])
+print("dset 3:", np.max(corrsDset3))
+      
 
-corrsDset2 = []
-print("dset 2 exploration")
+corrsDset4 = []
+print("dset 4 exploration")
 for i in range(len(corrs)):
-    if dset_values[i] == str(2):
-        #print(dset_values)
-        corrsDset2 = np.append(corrsDset2, corrs[i])
+    if dset_values[i] == str(4):
+        corrsDset4 = np.append(corrsDset4, corrs[i])
+        if corrs[i] >= .29: 
+            print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
 
 
-print(np.max(corrsDset2))
+print("dset4: ", np.max(corrsDset4))
+
         #print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
+
+
+
+
+
+
+
+
+# find which things match these params, they do pretty well on dset 5. 
+        #kf = 0.2
+        #kr = 10 
+        #alpha = 10 
+        #gamma = 0.73333   # passive diffusion
+        #L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        #baseLine = 0.5 # 2.5 was nice for row 2
+
+# pull corr for other dsets given params
+for i in range(len(corrs)):
+    if  [float(alpha_values[i]), float(kf_values[i]),  float(kr_values[i]), float(bl_values[i])] == [10, 0.2, 10, 0.5]:
+        #print(corrs[i], "node:", node_values[i], "dset:", dset_values[i], "alpha:", alpha_values[i], "gamma:", gamma_values[i], "kf:", kf_values[i], "kr:", kr_values[i], "bl", bl_values[i])
+        print(" ")
+
 
 
 

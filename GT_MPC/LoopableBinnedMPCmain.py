@@ -81,7 +81,6 @@ if __name__=="__main__":
     
     # calcium data is so large, pull a subset or use whole solve with max call.
     subsetAmount = np.max(np.shape(data1[row,:])) 
-    print("subamount:", subsetAmount)
     #subsetAmount = 2000
 
     # check and remove NaNs
@@ -89,7 +88,9 @@ if __name__=="__main__":
     NaNpresent = np.any(naninds)
     if NaNpresent == True:
         subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
-    print("after nan cut off", subsetAmount)
+    #print("after nan cut off", subsetAmount)
+    
+    #subsetAmount = 2000
 
     m, n = data1.shape
     CI_Meas = data1[row, :subsetAmount]
@@ -122,8 +123,8 @@ if __name__=="__main__":
     kf = 0.0513514
     kr = 7.6 
     alpha = 20 
-    gamma = 0.1   # passive diffusion
-    L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    gamma = 0.1  # passive diffusion
+    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     baseLine = 1 # 2.5 was nice for row 2
     
     if dset == 2: # params found from BFS, worked well on 5 for sure.
@@ -131,31 +132,31 @@ if __name__=="__main__":
         kr = 10 
         alpha = 16.666666 
         gamma = 1.3666666   # passive diffusion
-        L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 1 # 2.5 was nice for row 2
     
-    if dset == 5 or 3: # params found from BFS, worked well on 5 for sure.
+    if dset in [5, 3]: # params found from BFS, worked well on 5 for sure. Seem to be doing quite well on 1?
         kf = 0.2
         kr = 10 
         alpha = 10 
         gamma = 0.73333   # passive diffusion
-        L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 0.5 # 2.5 was nice for row 2
     
-    if dset == 4:
-        kf = 0.1
-        kr = 10 
-        alpha = 10 
-        gamma = 0.73333   # passive diffusion
-        L = CiF_0 + 50      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-        baseLine = 1.0 # 2.5 was nice for row 2
+    #if dset == 4:
+    #    kf = 0.1
+    #    kr = 10 
+    #    alpha = 10 
+    #    gamma = 0.73333   # passive diffusion
+    #    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    #    baseLine = 1.0 # 2.5 was nice for row 2
     
 
     #  from BFS: 
     #0.3976938974832873 node: 1 dset: 2 alpha: 16.666666666666668 gamma: 1.3666666666666667 kf: 0.1 kr: 10.0 bl 1.0
     #0.2986243815268469 node: 1 dset: 4 alpha: 10.0 gamma: 0.7333333333333333 kf: 0.1 kr: 10.0 bl 1.0
     
-    
+ 
     s = model.set_variable('_u', 's')         # control variable ( input )
     CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 

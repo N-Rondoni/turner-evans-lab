@@ -174,12 +174,14 @@ if __name__=="__main__":
 
             # finally call plot functions
             plotCorrelations(factors, corrCoefs, neuron, dset) 
+            
             #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
             #subStart, subStop = 200, 400
             #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
             subStart, subStop = 2000, 4000
+            
             plotSignals(timeVec, simSpikesRaw, spikeDatRaw, neuron, dset)
-            plotSignalsSubset(timeVec, simSpikesRaw, spikeDatRaw, subStart, subStop, neuron, dset)
+            #plotSignalsSubset(timeVec, simSpikesRaw, spikeDatRaw, subStart, subStop, neuron, dset)
 
             #print(np.shape(t_f[subStart:subStop]), np.shape(simSpikeDown[subStart:subStop]), np.shape(spikeDatDown[subStart:subStop]))
             #print(np.shape(t_f), np.shape(simSpikeDown), np.shape(spikeDatDown))
