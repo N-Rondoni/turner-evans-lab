@@ -45,8 +45,8 @@ def CRN(t, A):
     # define chemical master equation 
     # this is the RHS of the system     
  
-    du = [s - x + kr*z - kf*x*(L-z), # + beta 
-        kf*x*(L-z) - kr*z] 
+    du = [s - x + kr*z - kf*x*(L-z), # Ca^{2+}
+        kf*x*(L-z) - kr*z]           # Ci*
     
     return du
 
@@ -60,8 +60,8 @@ if __name__=="__main__":
     transientTime = 40 #for small w, transients end after ~40s. 
 
     # define initial conditions
-    X = 0 #Ca^{2+}
-    Z = 30  #CI^* #was previously 0, real data readouts start with some concentration.
+    X = 0   #Ca^{2+}
+    Z = 30  #CI^*
 
     # define constants/reaction parameters, kr << kf
     kf = 0.0513514
@@ -88,6 +88,8 @@ if __name__=="__main__":
         accumed_Z[i, :] = sol.y[1, :]
         accumed_S[i, :] = sine(amp, omegas[i], timeVec)
 
+    accumed_Y = np.zeros(np.shape(accumed_X))
+    accumed_Y = L - accumed_Z
 
     end = time.time()
     print('Total solve time ', end - start, "(s) for ", len(omegas), "different frequencies.")
@@ -101,7 +103,7 @@ if __name__=="__main__":
     ampX = np.zeros(len(omegas))
     ampZ = np.zeros(len(omegas))
     ampS = np.zeros(len(omegas)) # not need but good sanity check, should always be A_in
-
+    ampY = np.zeros(len(omegas))
 
     for i in range(len(omegas)):
         maxValX = np.max(accumed_X[i, transientIndex:])
@@ -115,6 +117,11 @@ if __name__=="__main__":
         maxValS = np.max(accumed_S[i, transientIndex:])
         minValS = np.min(accumed_S[i, transientIndex:])
         ampS[i] = (maxValS - minValS)/2
+
+        maxValY = np.max(accumed_Y[i, transientIndex:])
+        minValY = np.min(accumed_Y[i, transientIndex:])
+        ampY[i] = (maxValY - minValY)/2
+        
  
     # compute mean of signal
     meanX = np.zeros(len(omegas))
@@ -125,27 +132,46 @@ if __name__=="__main__":
 
 
     # plot signal, response in both state variables
-    fig, axs = plt.subplots(1, 3)
+    fig, axs = plt.subplots(1, 4)
+    omegas = np.log(omegas)
    
     # plot ratios of amplitudes
-    axs[0].plot(omegas, np.log(ampX/ampS))
-    axs[0].set_xlabel(r'$w$', fontsize = 16)
-    axs[0].set_ylabel(r'$\frac{A(ca^{2+})}{A(s)}$', fontsize=16)
+    axs[0].plot(omegas, np.log(ampX/ampS), label = r'$\frac{A(ca^{2+})}{A(s)}$')
+    #axs[0].plot(omegas, np.log(ampS), label = r'A(s)')
+    axs[0].set_xlabel(r'$\omega$', fontsize = 16)
+    axs[0].set_ylabel(r'Log ratio of amplitudes', fontsize=14)
     axs[0].title.set_text("Calcium Ion")#, fontsize = 18)
+    axs[0].legend()
 
-    axs[1].plot(omegas, np.log(ampZ/ampS))
-    axs[1].set_xlabel(r'$w$', fontsize = 16)
-    axs[1].set_ylabel(r'$\frac{A(CI^*)}{A(s)}$', fontsize=16)
+    axs[1].plot(omegas, np.log(ampZ/ampS), label = r'$\frac{A(CI^*)}{A(s)}$')
+    axs[1].set_xlabel(r'$\omega$', fontsize = 16)
+    #axs[1].set_ylabel(r'$\frac{A(CI^*)}{A(s)}$', fontsize=16)
     axs[1].title.set_text("Calcium Indicator")#, fontsize = 18)
+    axs[1].legend()
+ 
+    axs[2].plot(omegas, np.log((ampY + ampZ)/ampS), label = r'$\frac{A(CI^*)+ A(CI)}{A(s)}$')
+    axs[2].set_xlabel(r'$\omega$', fontsize = 16)
+    #axs[2].set_ylabel(r'$\frac{A(CI^*)}{A(s)}$', fontsize=16)
+    axs[2].title.set_text("Sum of calcium indicators")
+    axs[2].legend() 
 
-    axs[2].plot(omegas, np.log(ampZ/ampS), label = r'$\frac{A(ca^{2+})}{A(s)}$')
-    axs[2].plot(omegas, np.log(ampX/ampS), label = r'$\frac{A(CI^*)}{A(s)}$')
-    axs[2].legend()
-    axs[2].title.set_text("Both Plots Overlaid")
-    axs[2].set_xlabel(r'$w$', fontsize = 16)
-
-#    axs[3].plot(meanX, omegas)
-#    axs[3].plot(meanZ, omegas)
+    axs[3].plot(omegas, np.log(ampX/ampS), label = r'$\frac{A(ca^{2+})}{A(s)}$')
+    axs[3].plot(omegas, np.log(ampZ/ampS), label = r'$\frac{A(CI^*)}{A(s)}$')
+    axs[3].plot(omegas, np.log((ampZ + ampY)/ampS), label = r'$\frac{A(CI^*)+ A(CI)}{A(s)}$')
+    axs[3].plot(omegas, np.log((ampX + ampZ)/ampS), label = r'$\frac{A(Ca^{2+}) + A(CI^*)}{A(s)}$')
+    axs[3].title.set_text("All Overlaid")
+    axs[3].set_xlabel(r'$\omega$', fontsize = 16)
+    axs[3].legend() 
+    plt.tight_layout()
+    
+    plt.figure(2)
+    plt.plot(omegas, np.log((ampX + ampZ)/ampS), label = r'$\frac{A(Ca^{2+}) + A(CI^*)}{A(s)}$')
+    #plt.plot(omegas, np.log((ampZ + ampY)/ampS), label = r'$\frac{A(CI^*)+ A(CI)}{A(s)}$')
+    plt.plot(omegas, np.log(ampX/ampS), label = r'$\frac{A(ca^{2+})}{A(s)}$')
+    plt.xlabel(r'$\omega$', fontsize = 16)
+    plt.ylabel(r'Log ratio of amplitudes', fontsize=16)
+    plt.title("Log Frequency Response of Amplitude")
+    plt.legend()
 
     plt.show()
 
