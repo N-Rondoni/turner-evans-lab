@@ -110,7 +110,7 @@ if __name__=="__main__":
     n = CI_Meas.shape[0]
   
     #CI_Meas = movingAverage(CI_Meas, 30)
-    CI_Meas = sigmoid(CI_Meas)
+    CI_Meas = sigmoid(CI_Meas) - 0.1
 
     # set up timevec, recordings were made at 59.1 hz
     tEnd = n*(1/59.1) 
@@ -137,7 +137,7 @@ if __name__=="__main__":
     # define ODEs and parameters, kr << kf
    
     # same params as run_6_13_morning, i'm pretty sure
-    if dset in [1, 2, 3]: # params found from BFS, worked well on 5 for sure.
+    if dset in [1, 2, 3, 4, 5]: # params found from BFS, worked well on 5 for sure.
         #print("you got dset 2 or 4 tho dummy")
         kf = 0.1
         kr = 10 
@@ -146,21 +146,21 @@ if __name__=="__main__":
         L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 1 # 2.5 was nice for row 2
     
-    if dset == 5: # params found from BFS, worked well on 5 for sure.
-        kf = 0.2
-        kr = 10 
-        alpha = 10 
-        gamma = 0.73333   # passive diffusion
-        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-        baseLine = 0.5 # 2.5 was nice for row 2
+    #if dset == 5: # params found from BFS, worked well on 5 for sure.
+    #    kf = 0.2
+    #    kr = 10 
+    #    alpha = 10 
+    #    gamma = 0.73333   # passive diffusion
+    #    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    #    baseLine = 0.5 # 2.5 was nice for row 2
     
-    if dset == 4:
-        kf = 0.1
-        kr = 10 
-        alpha = 10 
-        gamma = 0.73333   # passive diffusion
-        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-        baseLine = 1.0 # 2.5 was nice for row 2
+    #if dset == 4:
+    #    kf = 0.1
+    #    kr = 10 
+    #    alpha = 10 
+    #    gamma = 0.73333   # passive diffusion
+    #    L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+    #    baseLine = 1.0 # 2.5 was nice for row 2
     
 
 
@@ -352,6 +352,8 @@ if __name__=="__main__":
     #corrCoef = np.corrcoef(interpS, spikeDat)[0, 1]
     #print("interp coeff:", corrCoef) -----------------------------------------------
     corrCoef = np.corrcoef(s[300:], spikeDat[300:])[0, 1] # toss first 200 time instants, contains bad transients.
+    corrCoef = np.corrcoef(s[100:], spikeDat[100:])[0, 1] # lessed for dset5, neuron 5
+
     print("Corr Coef, no interp:", corrCoef)     # ---------------------------------------------
 
     neuron = row
@@ -399,5 +401,5 @@ if __name__=="__main__":
     #plt.legend()
 
     
-    #plt.show()
+    plt.show()
 

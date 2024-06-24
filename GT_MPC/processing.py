@@ -15,6 +15,7 @@ import spikefinder_eval as se
 from spikefinder_eval import _downsample
 
 save = True
+ftype = "pdf"
 
 def plotCorrelations(factors, corrCoefs, neuron, dset):
     plt.figure()
@@ -47,9 +48,9 @@ def plotCorrelations(factors, corrCoefs, neuron, dset):
     print('dset:', dset, 'neuron:', neuron, "corr:", corrCoefs[0])
     if save == True:
         filename = 'CorrCoef_dset'+ str(dset) + "_neuron" + str(neuron)
-        plt.savefig(filename)
-        os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-        os.system('rm ' + filename + '.png')
+        plt.savefig(filename + '.' + ftype, format = ftype)
+        os.system('cp ' + filename + '.' + ftype + ' /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+        os.system('rm ' + filename + '.' + ftype)
     
 
 def plotSignalsSubset(t, simSignal, trueSignal, sStart, sStop, neuron, dset):
@@ -63,9 +64,9 @@ def plotSignalsSubset(t, simSignal, trueSignal, sStart, sStop, neuron, dset):
     
     if save == True:
         filename = 'Spikes_subset_dset'+ str(dset) + "_neuron" + str(neuron)
-        plt.savefig(filename)
-        os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-        os.system('rm ' + filename + '.png')
+        plt.savefig(filename + '.' + ftype, format = ftype)
+        os.system('cp ' + filename + '.' + ftype + ' /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+        os.system('rm ' + filename + '.' + ftype)
     #os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim')#/dset' + str(dset) +'/neuron' + str(neuron)) this line saves loose into the folder 
 
 def plotSignals(t, simSignal, trueSignal, neuron, dset):
@@ -79,9 +80,9 @@ def plotSignals(t, simSignal, trueSignal, neuron, dset):
 
     if save == True:
         filename = 'Spikes_fullSolve_dset'+ str(dset) + "_neuron" + str(neuron)
-        plt.savefig(filename)
-        os.system('cp ' + filename + '.png /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
-        os.system('rm ' + filename + '.png')
+        plt.savefig(filename + '.' + ftype, format = ftype)
+        os.system('cp ' + filename + '.' + ftype + ' /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
+        os.system('rm ' + filename + '.' + ftype)
     #
 
 
