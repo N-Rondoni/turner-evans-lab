@@ -145,7 +145,20 @@ if __name__=="__main__":
         gamma = 1.3666666   # passive diffusion
         L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 1 # 2.5 was nice for row 2
-    
+   
+    # good tracking for cornell showcase
+    goodTracking = True
+    if goodTracking == True:
+        penalty = 0
+        kf = 0.1
+        kr = 10 
+        alpha = 20.6666 
+        gamma = 30   # passive diffusion
+        L = CiF_0 + 200      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+   
+
+
+
     if dset == 5: # params found from BFS, worked well on 5 for sure.
         kf = 0.2
         kr = 10 
@@ -406,7 +419,8 @@ if __name__=="__main__":
     #CiF_f = CiF_f[subL:subH]
     #CI_Meas_interp = CI_Meas_interp[subL:subH]
 
-    subL, subH = 1050, 1650 #1000, 1500 is very nice.
+    subL, subH = 500, 1000 #1000, 1500 is very nice.
+                            # good figures made with 1050, 1650
 
     # rescale all values to be between 0 to 1
     #CiF_f = CiF_f/np.max(CiF_f[subL:subH])
