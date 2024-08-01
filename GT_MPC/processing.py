@@ -44,6 +44,7 @@ def plotCorrelations(factors, corrCoefs, neuron, dset):
     ax2.set_xlabel("Bin width (ms)", fontsize=20)
    
     fig.tight_layout()
+    #plt.show()
 
     print('dset:', dset, 'neuron:', neuron, "corr:", corrCoefs[0])
     if save == True:
@@ -51,7 +52,7 @@ def plotCorrelations(factors, corrCoefs, neuron, dset):
         plt.savefig(filename + '.' + ftype, format = ftype)
         os.system('cp ' + filename + '.' + ftype + ' /mnt/c/Users/nicho/Pictures/Gt_sim/dset' + str(dset) +'/neuron' + str(neuron)) # only run with this line uncommented if you are Nick
         os.system('rm ' + filename + '.' + ftype)
-    
+            
 
 def plotSignalsSubset(t, simSignal, trueSignal, sStart, sStop, neuron, dset):
     plt.figure()

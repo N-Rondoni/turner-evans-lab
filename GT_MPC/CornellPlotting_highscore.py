@@ -147,7 +147,7 @@ if __name__=="__main__":
         baseLine = 1 # 2.5 was nice for row 2
    
     # good tracking for cornell showcase
-    goodTracking = True
+    goodTracking = False
     if goodTracking == True:
         penalty = 0
         kf = 0.1
@@ -419,7 +419,7 @@ if __name__=="__main__":
     #CiF_f = CiF_f[subL:subH]
     #CI_Meas_interp = CI_Meas_interp[subL:subH]
 
-    subL, subH = 500, 1000 #1000, 1500 is very nice.
+    subL, subH = 1050, 1650 #1000, 1500 is very nice.
                             # good figures made with 1050, 1650
 
     # rescale all values to be between 0 to 1

@@ -111,6 +111,7 @@ if __name__=="__main__":
     states = ['test', 'train']
     tempSum = 0
     counter = 0
+    downsampledCorScor = []
     for stat in states:
         dsets = [1, 2, 3, 4, 5]
         #tempSum = 0
@@ -147,6 +148,7 @@ if __name__=="__main__":
                             #i = i+1
                             #continue
                     subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
+                    print(subsetAmount)
                 else:
                     subsetAmount = np.max(np.shape(spikeDat[i,:]))
 
@@ -182,11 +184,12 @@ if __name__=="__main__":
                 timeVec = np.linspace(0, finalTime, n)
                 neuron = i
                
-     
+                
 
                 # finally call plot functions
                 plotCorrelations(factors, corrCoefs, neuron, dset) 
-                
+                downsampledCorScor = np.append(downsampledCorScor, corrCoefs[0])
+
                 #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
                 #subStart, subStop = 200, 400
                 #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
@@ -201,6 +204,8 @@ if __name__=="__main__":
                 i = i + 1 
 
         print("average:", tempSum/counter)
+    print(downsampledCorScor)
+    np.save("allScores", downsampledCorScor)
 
     #plt.show()
 

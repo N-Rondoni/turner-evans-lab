@@ -113,18 +113,26 @@ if __name__=="__main__":
     counter = 0
     downsampledCorScor = []
     for stat in states:
-        dsets = [1, 2, 3, 4, 5]
+        dsets = [1, 3, 5, 4] # need to work out why 2, 4 aren't happening
         #tempSum = 0
         #counter = 0
         for dset in dsets:
             # load in true spikes
-            file_path2 = 'data/' + str(dset) + '.' + str(stat) + '.spikes.csv'
+            file_path2 = 'data/' + str(dset) + '.test.spikes.csv' # load in undownsampled data just to know number of rows.
             spikeDat = pd.read_csv(file_path2).T 
             spikeDat = np.array(spikeDat)
 
             #subsetAmount = np.max(np.shape(spikeDat[row,:]))
             #spikeDat = spikeDat[:, :subsetAmount]
             mSpike,nSpike = spikeDat.shape
+
+
+#            spikeDat = pd.read_csv(file_path2).T 
+#            spikeDat = np.array(spikeDat)
+
+            #subsetAmount = np.max(np.shape(spikeDat[row,:]))
+            #spikeDat = spikeDat[:, :subsetAmount]
+
 
             # set imrate depending on dset
             #if dset == 1:
@@ -135,29 +143,37 @@ if __name__=="__main__":
             #    imRate = 1/59.1
             #if dset == 4:
             #    imRate = 1/7.8
-            imRate = 1/59.1
-        
+            #imRate = 1/59.1
+            
+            imRate = 1/100
+            
             i = 0
             while i < mSpike:
-                # if NaNs in calcium dataset, ignore and step to the next.
-                if NaNChecker(dset, i, stat) == True:
-                    naninds = np.isnan(spikeDat[i,:])
+                #file_path2 = 'data/' + str(dset) + '.' + str(stat) + '.spikes.csv'
+                spikeDatRaw = np.load('data/resampled/node' + str(i) + '_dset' + str(dset) + '.' + str(stat) + '.spikes.npy')
+        
+                # if NaNs in calcium dataset, ignore and step to the next. NANS REMOVED IN DOWNSAMPLLING
+            #    if NaNChecker(dset, i, stat) == True:
+            #        naninds = np.isnan(spikeDat[i,:])
                     #if dset == 1:
                         #if stat == 'train': # This is the new shit that is tossing hella errors
                             #print(spikeDat[i,:])
                             #i = i+1
                             #continue
-                    subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
-                else:
-                    subsetAmount = np.max(np.shape(spikeDat[i,:]))
+           #         subsetAmount = ((np.where(naninds == True))[0][0]) - 1 #index of first Nan, less one. 
+           #     else:
+           #         subsetAmount = np.max(np.shape(spikeDat[i,:]))
 
-                spikeDatRaw = spikeDat[i, :subsetAmount]
+           #     spikeDatRaw = spikeDat[i, :subsetAmount]
+    #                node0_dset1.test.sVals.npy
+                simSpikesRaw = np.load('data/resampled/solutions/node' + str(i) + '_dset' + str(dset) + '.' + str(stat) + '.sVals.npy')
+                #simSpikesRaw = np.ndarray.flatten(simSpikesRaw)        
+                n = np.shape(spikeDatRaw)[0]
+                n = np.shape(simSpikesRaw)[0]
 
-                simSpikesRaw = np.load('data/'+ str(stat) + '_s_node_'+ str(i) + 'dset_' + str(dset) + '.npy')
-                simSpikesRaw = np.ndarray.flatten(simSpikesRaw)        
-                n = np.max(np.shape(spikeDatRaw))
                 finalTime = n*(imRate)
-                
+                if nSpike == n:
+                    print("same lengths!")
 
                 # scale firing rate down so we can see what is happening. Avoid transients, hard to see.
                 simSpikesRaw = (np.max(spikeDatRaw[200:])/np.max(simSpikesRaw[200:]))*simSpikesRaw # correlation coeff. invariant wrt scaling.     
@@ -167,6 +183,7 @@ if __name__=="__main__":
 
                 # create corr coeff
                 factors = [4, 8, 16, 32]
+                factors = [10, 12, 16, 32]
                 corrCoefs = np.zeros(np.shape(factors))
                 for j in range(len(factors)):
                     factor = factors[j]
@@ -194,7 +211,9 @@ if __name__=="__main__":
                 #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
                 subStart, subStop = 2000, 4000
                 
-                plotSignals(timeVec, simSpikesRaw, spikeDatRaw, neuron, dset)
+                #plotSignals(timeVec, simSpikesRaw, spikeDatRaw, neuron, dset)
+                
+
                 #plotSignalsSubset(timeVec, simSpikesRaw, spikeDatRaw, subStart, subStop, neuron, dset)
 
                 #print(np.shape(t_f[subStart:subStop]), np.shape(simSpikeDown[subStart:subStop]), np.shape(spikeDatDown[subStart:subStop]))
@@ -204,7 +223,7 @@ if __name__=="__main__":
 
         print("average:", tempSum/counter)
     print(downsampledCorScor)
-    np.save("allScores", downsampledCorScor)
+    np.save("data/allScores", downsampledCorScor)
 
     #plt.show()
 
