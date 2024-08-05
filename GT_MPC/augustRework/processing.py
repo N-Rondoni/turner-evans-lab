@@ -113,7 +113,8 @@ if __name__=="__main__":
     counter = 0
     downsampledCorScor = []
     for stat in states:
-        dsets = [1, 3, 5, 4] # need to work out why 2, 4 aren't happening
+        dsets = [4, 2, 3, 5, 1]
+        #dsets = [1, 3, 5, 4] # need to work out why 2, 4 aren't happening
         #tempSum = 0
         #counter = 0
         for dset in dsets:
@@ -145,7 +146,7 @@ if __name__=="__main__":
             #    imRate = 1/7.8
             #imRate = 1/59.1
             
-            imRate = 1/100
+            imRate = 1/50
             
             i = 0
             while i < mSpike:
@@ -183,7 +184,7 @@ if __name__=="__main__":
 
                 # create corr coeff
                 factors = [4, 8, 16, 32]
-                factors = [10, 12, 16, 32]
+                factors = [5, 12, 16, 32]
                 corrCoefs = np.zeros(np.shape(factors))
                 for j in range(len(factors)):
                     factor = factors[j]

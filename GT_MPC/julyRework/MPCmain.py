@@ -303,7 +303,7 @@ if __name__=="__main__":
     saveLoc = 'data/resampled/solutions/node'+ str(row) + '_dset' + str(dset) + '.' + str(stat) + '.sVals'
     np.save(saveLoc, s)
   
-
+    print(spikeDatRaw[0:25]) 
     s = np.array(s[:,0]) # gotta reshape s 
    
     factor = 10 #4#32 #how much to downsample by

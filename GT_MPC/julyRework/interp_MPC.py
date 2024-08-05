@@ -96,7 +96,7 @@ if __name__=="__main__":
     # uncommend hardcoded subsetAmount to test smaller subsets
     subsetAmount = np.shape(tempCalc)[0]
     #print("subamount:", subsetAmount)
-    #subsetAmount = 2000
+    subsetAmount = 2000
     CI_Meas = tempCalc[:subsetAmount]
     n = len(CI_Meas)
     
@@ -155,7 +155,7 @@ if __name__=="__main__":
         L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 1.0 # 2.5 was nice for row 2
     
-    tstep = 1/50
+    tstep = 1/100
 
     #.292995469758242 node: 1 dset: 5 alpha: 10.0 gamma: 0.7333333333333333 kf: 0.2 kr: 10.0 bl 0.5
 
@@ -308,7 +308,7 @@ if __name__=="__main__":
 #   mSpike,nSpike = spikeDat.shape
 #    spikeDatRaw = spikeDat[row, :]
     spikeDatRaw = np.load(file_path2)
-   
+    spikeDatRaw = spikeDatRaw[:subsetAmount] 
     #spikeDatRaw = np.interp(t_f, timeVec, spikeDatRaw) I think interpolating s to fit these time points makes more sense
 
 

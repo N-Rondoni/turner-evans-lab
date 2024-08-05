@@ -11,8 +11,8 @@ from spikefinder_eval import _downsample
 dsets = [1, 2, 3, 4, 5] #dset 1, row 1 has NaN
 #dsets = [5]
 #dsets = [2, 4]
-dsets = [4, 2]
-status = ['test','train']
+dsets = [4, 2, 3, 5, 1]
+status = ['train', 'test']
 
 
 for stat in status:
@@ -36,7 +36,7 @@ for stat in status:
                 print("This neuron's data contains NaNs! Solving up until NaNs begin... ") 
                 
             # run solver, if NaNs present main will simulate up until they begin. 
-            os.system("python3 interp_MPC.py " + str(i) + " " + str(dset) + " " + str(stat))
+            os.system("python3 MPCmain.py " + str(i) + " " + str(dset) + " " + str(stat))
             end = time.time()
             print("previous solve for neuron", i, "completed in", (end - start)/60, "minutes")
             print("------------------------------------------------------------------------")
