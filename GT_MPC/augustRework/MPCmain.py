@@ -106,7 +106,7 @@ if __name__=="__main__":
     # uncommend hardcoded subsetAmount to test smaller subsets
     subsetAmount = np.shape(tempCalc)[0]
     #print("subamount:", subsetAmount)
-    subsetAmount = 4000
+    subsetAmount = 10000
     CI_Meas = tempCalc[:subsetAmount]
     n = len(CI_Meas)
     
@@ -149,41 +149,38 @@ if __name__=="__main__":
         L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 1 # 2.5 was nice for row 2
     
-    if dset == 2:
-        kf = 0.004
-        kr = 1 
-        alpha = 1
-        gamma = .1   # passive diffusion
-        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-        baseLine = 1 # 2.5 was nice for row 
-
-    if dset == 5:
-        kf = 0.0069444444
-        kr = 1 
-        alpha = 1
-        gamma = 1   # passive diffusion
-        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-        baseLine = 1 # 2.5 was nice for row 
-
-
-
-
-
-#    if dset == 5: # params found from BFS, worked well on 5 for sure.
-#        kf = 0.2
-#        kr = 10 
-#        alpha = 10 
-#        gamma = 0.73333   # passive diffusion
+#    if dset == 2:
+#        kf = 0.004
+#        kr = 1 
+#        alpha = 1
+#        gamma = .1   # passive diffusion
 #        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-#        baseLine = 0.5 # 2.5 was nice for row 2
+#        baseLine = 1 # 2.5 was nice for row 
+
+#    if dset == 5:
+#        kf = 0.0069444444
+#        kr = 1 
+#        alpha = 1
+#        gamma = 1   # passive diffusion
+#        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+#        baseLine = 1 # 2.5 was nice for row 
+
+
+    if dset == 5: # params found from BFS, worked well on 5 for sure.
+        kf = 0.2
+        kr = 10 
+        alpha = 10 
+        gamma = 0.73333   # passive diffusion
+        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        baseLine = 0.5 # 2.5 was nice for row 2
     
-#    if dset == 4:
-#        kf = 0.1
-#        kr = 10 
-#        alpha = 10 
-#        gamma = 0.73333   # passive diffusion
-#        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
-#        baseLine = 1.0 # 2.5 was nice for row 2
+    if dset == 4:
+        kf = 0.1
+        kr = 10 
+        alpha = 10 
+        gamma = 0.73333   # passive diffusion
+        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        baseLine = 1.0 # 2.5 was nice for row 2
     
     tstep = 1/50 #1/100 seems to just do great
 
@@ -396,7 +393,7 @@ if __name__=="__main__":
     os.system('rm ' + filename + '.png')
 
     
-    subL, subH = 500, 1000
+    subL, subH = 1000, 2000
 
     plt.figure(5)
     plt.plot(t_f[subL:subH], CiF_f[subL:subH], label=r'$CI^{*}_{Sim}$') ## subtracting baseline
