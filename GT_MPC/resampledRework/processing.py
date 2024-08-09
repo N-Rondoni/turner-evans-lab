@@ -116,7 +116,7 @@ if __name__=="__main__":
         #dsets = [1, 4, 2, 3, 5, 1]
         #dsets = [1, 3, 5, 4] # need to work out why 2, 4 aren't happening
         dsets = [1, 2, 3, 4, 5]
-        dsets = [5, 2, 4, 3, 1] #dset 1, row 1 has NaN
+#        dsets = [5, 2, 4, 3, 1] #dset 1, row 1 has NaN
 
         #tempSum = 0
         #counter = 0
