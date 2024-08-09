@@ -230,6 +230,7 @@ if __name__=="__main__":
 
         print("average:", tempSum/counter)
     print(downsampledCorScor)
+    print(np.median(downsampledCorScor))
     np.save("data/allScores", downsampledCorScor)
 
     #plt.show()

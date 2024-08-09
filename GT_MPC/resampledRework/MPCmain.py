@@ -112,7 +112,7 @@ if __name__=="__main__":
     
   
     #CI_Meas = movingAverage(CI_Meas, 30)
-    CI_Meas = sigmoid(CI_Meas) - 0.1
+    CI_Meas = sigmoid(CI_Meas) - 0.15
 
     # set up timevec, recordings were made at 59.1 hz
 
@@ -193,7 +193,8 @@ if __name__=="__main__":
         baseLine = 1.0 # 2.5 was nice for row 2
     
     tstep = 1/50 #1/100 seems to just do great
-
+    if dset == 1:
+        tstep = 1/100
     #.292995469758242 node: 1 dset: 5 alpha: 10.0 gamma: 0.7333333333333333 kf: 0.2 kr: 10.0 bl 0.5
 
 
@@ -212,7 +213,7 @@ if __name__=="__main__":
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
             't_step': tstep, # (s)
-            'n_robust': 1,
+            'n_robust': 0,
             'store_full_solution': True,
             }
   
@@ -347,14 +348,14 @@ if __name__=="__main__":
     spikeDatRaw = np.load(file_path2)
     spikeDatRaw = spikeDatRaw[:subsetAmount] 
     #spikeDatRaw = np.interp(t_f, timeVec, spikeDatRaw) I think interpolating s to fit these time points makes more sense
-    print(spikeDatRaw[0:25])
+#    print(spikeDatRaw[0:25])
 
     ##----------------------------------------
     # POST PROCESS FOR DOWNSAMPLING BELOW
     ##----------------------------------------
     # save things for later eval too
     saveLoc = 'data/resampled/solutions/node'+ str(row) + '_dset' + str(dset) + '.' + str(stat) + '.sVals'
-    print("shapes:", np.shape(spikeDatRaw), np.shape(s_interp))  
+#    print("shapes:", np.shape(spikeDatRaw), np.shape(s_interp))  
 
     s = s_interp
     np.save(saveLoc, s)

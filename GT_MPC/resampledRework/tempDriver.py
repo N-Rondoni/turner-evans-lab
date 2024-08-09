@@ -8,11 +8,11 @@ import pandas as pd
 from spikefinder_eval import _downsample
 
 
-dsets = [4, 3, 1, 5, 2] #dset 1, row 1 has NaN
+dsets = [1]#, 4, 2] #dset 1, row 1 has NaN
 #dsets = [5]
 #dsets = [2, 4]
 #dsets = [4, 2, 3, 5, 1]
-status = ['train']
+status = ['train']#'test']#, 'train']
 
 
 for stat in status:
@@ -23,8 +23,6 @@ for stat in status:
         mDat, nDat = np.shape(data1)
         # loop through rows, each corresponds to a neuron. 
         i = 0 
-        if dset == 4:
-            i = 3
         while i < mDat:
             start  = time.time()
             print("Beginning solve on", str(stat) ,"data set", str(dset) + ", neuron",  i)
