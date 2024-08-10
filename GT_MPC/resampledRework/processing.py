@@ -8,7 +8,7 @@ import time
 import do_mpc
 from casadi import *
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 from datetime import date
 import spikefinder_eval as se
 from spikefinder_eval import _downsample
@@ -112,6 +112,11 @@ if __name__=="__main__":
     tempSum = 0
     counter = 0
     downsampledCorScor = []
+    downsampledCorScor1 = []
+    downsampledCorScor2 = []
+    downsampledCorScor3 = []
+    downsampledCorScor4 = []
+    downsampledCorScor5 = []
     for stat in states:
         #dsets = [1, 4, 2, 3, 5, 1]
         #dsets = [1, 3, 5, 4] # need to work out why 2, 4 aren't happening
@@ -212,7 +217,17 @@ if __name__=="__main__":
                 # finally call plot functions
                 plotCorrelations(factors, corrCoefs, neuron, dset) 
                 downsampledCorScor = np.append(downsampledCorScor, corrCoefs[0])
-
+                if dset == 1:
+                    downsampledCorScor1 = np.append(downsampledCorScor1, corrCoefs[0])
+                if dset == 2:
+                    downsampledCorScor2 = np.append(downsampledCorScor2, corrCoefs[0])
+                if dset == 3:
+                    downsampledCorScor3 = np.append(downsampledCorScor3, corrCoefs[0])
+                if dset == 4:
+                    downsampledCorScor4 = np.append(downsampledCorScor4, corrCoefs[0])
+                if dset == 5:
+                    downsampledCorScor5 = np.append(downsampledCorScor5, corrCoefs[0])
+                
                 #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
                 #subStart, subStop = 200, 400
                 #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
@@ -232,6 +247,10 @@ if __name__=="__main__":
     print(downsampledCorScor)
     print(np.median(downsampledCorScor))
     np.save("data/allScores", downsampledCorScor)
-
+    np.save("data/allScoresDset1", downsampledCorScor1)
+    np.save("data/allScoresDset2", downsampledCorScor2)
+    np.save("data/allScoresDset3", downsampledCorScor3)
+    np.save("data/allScoresDset4", downsampledCorScor4)
+    np.save("data/allScoresDset5", downsampledCorScor5)
     #plt.show()
 
