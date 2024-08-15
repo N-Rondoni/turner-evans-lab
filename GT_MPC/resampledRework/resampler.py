@@ -16,7 +16,7 @@ for stat in states:
     if stat == 'test':
         dsets = [1, 2, 3, 4, 5]
     if stat == 'train':
-        dsets = [1, 2, 3, 4, 5]#, 6, 7]
+        dsets = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         
     for dset in dsets:
         # load in true spikes
@@ -44,7 +44,8 @@ for stat in states:
             imRate = 1/59.1
         if dset == 4:
             imRate = 1/7.8
-        
+        if dset in [6, 7, 8, 9]:
+            imRate = 1/60
         
 
         # must remove NaNs before resample or whole row becomes NaN

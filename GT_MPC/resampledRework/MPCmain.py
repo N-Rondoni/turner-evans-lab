@@ -124,7 +124,8 @@ if __name__=="__main__":
         imRate = 1/59.1
     if dset == 4:
         imRate = 1/7.8
-
+    if dset in [6, 7, 8, 9]:
+        imRate = 1/60
     #imRate = 1/50
     tEnd = n*(imRate) 
     print("Simulating until final time", tEnd/60, "minutes, consisting of", n, "data points")
@@ -192,6 +193,16 @@ if __name__=="__main__":
         L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
         baseLine = 1.0 # 2.5 was nice for row 2
     
+    if dset in [6, 7, 8, 9]: #copy 1 for fun
+        kf = 0.1
+        kr = 10 
+        alpha = 16.666666 
+        gamma = 1.3666666   # passive diffusion
+        L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
+        baseLine = 1 # 2.5 was nice for row 2
+    
+        
+   
     tstep = 1/50 #1/100 seems to just do great
     if dset == 1:
         tstep = 1/100

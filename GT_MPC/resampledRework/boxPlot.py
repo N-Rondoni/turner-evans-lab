@@ -8,15 +8,20 @@ cors2 = np.load("data/allScoresDset2.npy")
 cors3 = np.load("data/allScoresDset3.npy")
 cors4 = np.load("data/allScoresDset4.npy")
 cors5 = np.load("data/allScoresDset5.npy")
+cors6 =  np.load("data/allScoresDset6.npy")
+cors7 =  np.load("data/allScoresDset7.npy")
+cors8 =  np.load("data/allScoresDset8.npy")
+cors9 =  np.load("data/allScoresDset9.npy")
+
 #print(cors1)
 
-labels = ["1", "2", "3", "4", "5", "All"]
+labels = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "All"]
 
 plt.figure(1)
 plt.title(r"Box plots of correlation scores by data set, $n_{all} = $" + str(np.shape(cors)[0]), fontsize = 18)
 plt.xlabel("Data Set")
 plt.ylabel("Correlation Coefficient")
-plt.boxplot([cors1, cors2, cors3, cors4, cors5, cors], tick_labels=labels)
+plt.boxplot([cors1, cors2, cors3, cors4, cors5, cors6, cors7, cors8, cors9, cors], labels = labels)
 
 
 plt.figure(2)

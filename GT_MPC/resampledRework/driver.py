@@ -8,13 +8,13 @@ import pandas as pd
 from spikefinder_eval import _downsample
 
 
-dsets = [5, 2, 4, 3, 1] #dset 1, row 1 has NaN
+dsets = [6, 7, 8, 9]#5, 2, 4, 3, 1] #dset 1, row 1 has NaN
 #dsets = [5]
 #dsets = [2, 4]
 #dsets = [4, 2, 3, 5, 1]
-status = ['test', 'train']
+status = ['train']
 
-
+dsets = [9]
 for stat in status:
     for dset in dsets:
         file_path = 'data/' + str(dset) + '.' + str(stat) + '.calcium.csv'

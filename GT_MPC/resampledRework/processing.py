@@ -12,6 +12,7 @@ import pandas as pd
 from datetime import date
 import spikefinder_eval as se
 from spikefinder_eval import _downsample
+from VPdistance import VPdis
 
 save = False
 ftype = "png"
@@ -117,11 +118,18 @@ if __name__=="__main__":
     downsampledCorScor3 = []
     downsampledCorScor4 = []
     downsampledCorScor5 = []
+    downsampledCorScor6 = []
+    downsampledCorScor7 = []
+    downsampledCorScor8 = []
+    downsampledCorScor9 = []
+    allVPDs = []
+
     for stat in states:
-        #dsets = [1, 4, 2, 3, 5, 1]
-        #dsets = [1, 3, 5, 4] # need to work out why 2, 4 aren't happening
-        dsets = [1, 2, 3, 4, 5]
-#        dsets = [5, 2, 4, 3, 1] #dset 1, row 1 has NaN
+       #dsets = [1, 2, 3, 4, 5]
+        dsets = [1, 3, 4, 5]
+        if stat == "train":
+            #dsets = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            dsets = [1,  3, 4, 5, 6, 7, 8, 9]
 
         #tempSum = 0
         #counter = 0
@@ -152,7 +160,8 @@ if __name__=="__main__":
                 imRate = 1/59.1
             if dset == 4:
                 imRate = 1/7.8
-
+            if dset in [6, 7, 8, 9]:
+                imRate = 1/60
         
             
             i = 0
@@ -193,30 +202,45 @@ if __name__=="__main__":
                
 
                 # create corr coeff
-                factors = [4, 8, 16, 32]
+                factors = [4]#, 8, 16, 32]
                 factors[0] = int(np.ceil((1/10)*(1/imRate)))  #5 #4#32 #how much to downsample by
-
+    
                 corrCoefs = np.zeros(np.shape(factors))
+                VPDs = np.zeros(np.shape(factors))
                 for j in range(len(factors)):
                     factor = factors[j]
                     spikeDatDown = _downsample(spikeDatRaw, factor)
                     simSpikeDown = _downsample(simSpikesRaw, factor)
                     corrCoefs[j] = np.corrcoef(spikeDatDown, simSpikeDown)[0, 1] # toss first 200 time instants, contains bad transients.
+                    print('dset:', dset, 'neuron:', i, "corr:", corrCoefs[0])
+
+                    # split Victur-Purpura computations into two (can run on subsets then add results, getting same score).
+                    # this must be done for certain data sets if you have less than 16GB ram.    
+                    Nreduced = int(len(spikeDatDown)/2)
+                    VPDtemp1 = VPdis(spikeDatDown[0:Nreduced], simSpikeDown[0:Nreduced], 1) 
+                    VPDtemp2 = VPdis(spikeDatDown[Nreduced:-1], simSpikeDown[Nreduced:-1], 1) 
+                    sumVPD = VPDtemp1 + VPDtemp2
+                    print(sumVPD)
+                    #VPD = VPdis(spikeDatDown, simSpikeDown, 1)
+                    #print(VPD)
+                    VPDs[j] = sumVPD                    
                     #corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
                     if j == 0:
                         tempSum = tempSum + corrCoefs[0]
                         counter = counter + 1   
+
                 # set up time to match, note final time is still computed with undownsampled n. Only use this time Vec for testing to be safe.
                 n1 = min([len(spikeDatDown), len(simSpikeDown)])
                 t_down = np.linspace(0, finalTime, n1)
                 timeVec = np.linspace(0, finalTime, n)
                 neuron = i
                
-                
-
+               
                 # finally call plot functions
-                plotCorrelations(factors, corrCoefs, neuron, dset) 
+                #plotCorrelations(factors, corrCoefs, neuron, dset)
                 downsampledCorScor = np.append(downsampledCorScor, corrCoefs[0])
+                allVPDs = np.append(allVPDs, VPDs[0])
+                print("Victor-Purpura Distance:", VPDs[0])
                 if dset == 1:
                     downsampledCorScor1 = np.append(downsampledCorScor1, corrCoefs[0])
                 if dset == 2:
@@ -227,7 +251,15 @@ if __name__=="__main__":
                     downsampledCorScor4 = np.append(downsampledCorScor4, corrCoefs[0])
                 if dset == 5:
                     downsampledCorScor5 = np.append(downsampledCorScor5, corrCoefs[0])
-                
+                if dset == 6:
+                    downsampledCorScor6 = np.append(downsampledCorScor6, corrCoefs[0])
+                if dset == 7:
+                    downsampledCorScor7 = np.append(downsampledCorScor7, corrCoefs[0])
+                if dset == 8:
+                    downsampledCorScor8 = np.append(downsampledCorScor8, corrCoefs[0])
+                if dset == 9:
+                    downsampledCorScor9 = np.append(downsampledCorScor5, corrCoefs[0])
+               
                 #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
                 #subStart, subStop = 200, 400
                 #plotSignalsSubset(t_f, simSpikeDown, spikeDatDown, subStart, subStop, neuron, dset) # UNCOMMENT TO PLOT DOWNSAMPLED VALUES
@@ -244,13 +276,22 @@ if __name__=="__main__":
                 i = i + 1 
 
         print("average:", tempSum/counter)
-    print(downsampledCorScor)
-    print(np.median(downsampledCorScor))
+
+    print("All cors:", downsampledCorScor)
+    print("Median of whole set:", np.median(downsampledCorScor))
+    print("All VP distances:", allVPDs)
+    np.save("data/allVPDs", allVPDs)
     np.save("data/allScores", downsampledCorScor)
     np.save("data/allScoresDset1", downsampledCorScor1)
     np.save("data/allScoresDset2", downsampledCorScor2)
     np.save("data/allScoresDset3", downsampledCorScor3)
     np.save("data/allScoresDset4", downsampledCorScor4)
     np.save("data/allScoresDset5", downsampledCorScor5)
+    np.save("data/allScoresDset6", downsampledCorScor6)
+    np.save("data/allScoresDset7", downsampledCorScor7)
+    np.save("data/allScoresDset8", downsampledCorScor8)
+    np.save("data/allScoresDset9", downsampledCorScor9)
+
+    print(allVDs)
     #plt.show()
 
