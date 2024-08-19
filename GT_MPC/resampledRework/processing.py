@@ -126,10 +126,10 @@ if __name__=="__main__":
 
     for stat in states:
        #dsets = [1, 2, 3, 4, 5]
-        dsets = [1, 3, 4, 5]
+        dsets = [1, 2, 3, 4, 5]
         if stat == "train":
             #dsets = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-            dsets = [1,  3, 4, 5, 6, 7, 8, 9]
+            dsets = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         #tempSum = 0
         #counter = 0
@@ -220,7 +220,7 @@ if __name__=="__main__":
                     VPDtemp1 = VPdis(spikeDatDown[0:Nreduced], simSpikeDown[0:Nreduced], 1) 
                     VPDtemp2 = VPdis(spikeDatDown[Nreduced:-1], simSpikeDown[Nreduced:-1], 1) 
                     sumVPD = VPDtemp1 + VPDtemp2
-                    print(sumVPD)
+                    #print(sumVPD)
                     #VPD = VPdis(spikeDatDown, simSpikeDown, 1)
                     #print(VPD)
                     VPDs[j] = sumVPD                    
@@ -292,6 +292,6 @@ if __name__=="__main__":
     np.save("data/allScoresDset8", downsampledCorScor8)
     np.save("data/allScoresDset9", downsampledCorScor9)
 
-    print(allVDs)
+    print(allVPDs)
     #plt.show()
 
