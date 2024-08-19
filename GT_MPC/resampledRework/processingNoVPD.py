@@ -203,8 +203,8 @@ if __name__=="__main__":
 
                 # create corr coeff
                 factors = [4]#, 8, 16, 32]
-                factors[0] = int(np.ceil((1/10)*(1/imRate)))  #5 #4#32 #how much to downsample by
-    
+                factors[0] = int(np.ceil((1/25)*(1/imRate)))  #5 #4#32 #how much to downsample by
+                print(factors[0]) 
                 corrCoefs = np.zeros(np.shape(factors))
                 VPDs = np.zeros(np.shape(factors))
                 for j in range(len(factors)):
@@ -217,13 +217,13 @@ if __name__=="__main__":
                     # split Victur-Purpura computations into two (can run on subsets then add results, getting same score).
                     # this must be done for certain data sets if you have less than 16GB ram.    
                     Nreduced = int(len(spikeDatDown)/2)
-                    VPDtemp1 = VPdis(spikeDatDown[0:Nreduced], simSpikeDown[0:Nreduced], 1) 
-                    VPDtemp2 = VPdis(spikeDatDown[Nreduced:-1], simSpikeDown[Nreduced:-1], 1) 
-                    sumVPD = VPDtemp1 + VPDtemp2
+                    #VPDtemp1 = VPdis(spikeDatDown[0:Nreduced], simSpikeDown[0:Nreduced], 1) 
+                    #VPDtemp2 = VPdis(spikeDatDown[Nreduced:-1], simSpikeDown[Nreduced:-1], 1) 
+                    #sumVPD = VPDtemp1 + VPDtemp2
                     #print(sumVPD)
                     #VPD = VPdis(spikeDatDown, simSpikeDown, 1)
                     #print(VPD)
-                    VPDs[j] = sumVPD                    
+                    #VPDs[j] = sumVPD                    
                     #corCoefSub = print(dset, i, np.corrcoef(spikeDatDown[200:400], simSpikeDown[200:400])[0, 1] )
                     if j == 0:
                         tempSum = tempSum + corrCoefs[0]
@@ -239,8 +239,8 @@ if __name__=="__main__":
                 # finally call plot functions
                 #plotCorrelations(factors, corrCoefs, neuron, dset)
                 downsampledCorScor = np.append(downsampledCorScor, corrCoefs[0])
-                allVPDs = np.append(allVPDs, VPDs[0])
-                print("Victor-Purpura Distance:", VPDs[0])
+                #allVPDs = np.append(allVPDs, VPDs[0])
+#                print("Victor-Purpura Distance:", VPDs[0])
                 if dset == 1:
                     downsampledCorScor1 = np.append(downsampledCorScor1, corrCoefs[0])
                 if dset == 2:
@@ -280,7 +280,7 @@ if __name__=="__main__":
     print("All cors:", downsampledCorScor)
     print("Median of whole set:", np.median(downsampledCorScor))
     print("All VP distances:", allVPDs)
-    np.save("data/allVPDs", allVPDs)
+    #np.save("data/allVPDs", allVPDs)
     np.save("data/allScores", downsampledCorScor)
     np.save("data/allScoresDset1", downsampledCorScor1)
     np.save("data/allScoresDset2", downsampledCorScor2)

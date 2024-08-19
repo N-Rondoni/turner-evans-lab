@@ -259,7 +259,7 @@ if __name__=="__main__":
                 if dset == 8:
                     downsampledCorScor8 = np.append(downsampledCorScor8, corrCoefs[0])
                 if dset == 9:
-                    downsampledCorScor9 = np.append(downsampledCorScor5, corrCoefs[0])
+                    downsampledCorScor9 = np.append(downsampledCorScor9, corrCoefs[0])
                
                 #plotSignals(t_down[50:], simSpikeDown[50:], spikeDatDown[50:], neuron, dset) # THESE ARE DOWNSAMPLES VALUES
                 #subStart, subStop = 200, 400
