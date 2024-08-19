@@ -17,7 +17,7 @@ status = ['train'] # did 'test' already
 #dsets = [9]
 for stat in status:
     if stat == 'train':
-        dsets = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        dsets = [3, 4, 5, 6, 7, 8, 9, 10]
 
     for dset in dsets:
         file_path = 'data/' + str(dset) + '.' + str(stat) + '.calcium.csv'
@@ -26,8 +26,6 @@ for stat in status:
         mDat, nDat = np.shape(data1)
         # loop through rows, each corresponds to a neuron. 
         i = 0
-        if dset == 1:
-            i = 5
         while i < mDat:
             start  = time.time()
             print("Beginning solve on", str(stat) ,"data set", str(dset) + ", neuron",  i)

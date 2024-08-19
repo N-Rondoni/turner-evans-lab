@@ -361,7 +361,8 @@ if __name__=="__main__":
     s = s_interp
     np.save(saveLoc, s)
 
-    factor = int(np.ceil((1/10)*(1/imRate)))  #5 #4#32 #how much to downsample by
+    factor = int(np.ceil((1/10)*(1/imRate)))  #Whitten's factor, should just be 10. 
+    factor = 4
     spikeDat = _downsample(spikeDatRaw, factor)
     s = _downsample(s, factor)
 
