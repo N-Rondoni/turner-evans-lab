@@ -1,7 +1,7 @@
 import numpy  as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from dataParser import pcc, medianFromDset
+from dataParser import pcc, medianFromDset, meanFromDset
 #import dataParser
 import pandas as pd
 
@@ -51,7 +51,7 @@ plt.title("Correlation coefficients across all datasets", fontsize = 18)
 min_ylim, max_ylim = plt.ylim()
 #plt.text(np.mean(allVPDs)*1.1, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(allVPDs)))
 plt.text(np.mean(cors)*0.6, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(cors)))
-plt.text(stmMeanCor*1.2, max_ylim*0.9, 'STM Mean: {:.2f}'.format(float(stmMeanCor)), color = 'r')
+plt.text(stmMeanCor*1.01, max_ylim*0.9, 'STM Mean: {:.2f}'.format(float(stmMeanCor)), color = 'r')
 
 # plotting VP distances
 
@@ -87,19 +87,27 @@ stm_df = pcc(file_path2, 'stm')
 #print(stm_df['1.test.spikes'])
 j = 0
 runSum = 0
+accumed = []
 for key in stm_df:
+    print(key)
     temp = stm_df[key]
     res = float(temp[0])
+    accumed = np.append(accumed, res)
     runSum = runSum + res
     j = j + 1
 print("average for stm across all datasets:", runSum/j)
+print("median across all for stm:", np.median(accumed))
+
+
+print("stm dset 7 mean:", float(stm_df['7.train.spikes'][0]))
+print("stm dset 3 mean:", float(stm_df['3.test.spikes'][0]))
 
 
 #stm_df = df1[(df1['algo_algorithm'] == 'stm')]
 #print(stm_df['value'].mean()) # used to place mean line in earlier plot
 #print(stm_df.keys())
 #
-medianD1 = medianFromDset(df, 'deneux', 1)
+medianD1 = medianFromDset(df, 'deneux', 1) # pulls median of both train and test data together
 medianD2 = medianFromDset(df, 'deneux', 2)
 medianD3 = medianFromDset(df, 'deneux', 3)
 medianD4 = medianFromDset(df, 'deneux', 4)
@@ -112,7 +120,10 @@ medianS4 = medianFromDset(df, 'stm', 4)
 medianS5 = medianFromDset(df, 'stm', 5)
 
 
-# all the below say mean, should be median, don't want to rename them all
+meanS3 = meanFromDset(df, 'stm', 3)
+meanS2 = meanFromDset(df, 'stm', 2)
+
+# all the below say mean, should be median
 figNo = 8
 plt.figure(figNo)
 simDat = cors1
@@ -131,7 +142,7 @@ figNo = figNo + 1
 
 plt.figure(figNo)
 simDat = cors2
-methodsMean = medianS2
+methodsMean = meanS2
 dset = dset + 1
 plt.hist(simDat, color = 'c', edgecolor='k')
 plt.axvline(np.mean(simDat), color='k', linestyle="dashed", alpha = 0.65)
@@ -140,14 +151,15 @@ plt.ylabel("Count", fontsize =14)
 plt.xlabel("Correlation Coeff.", fontsize = 14)
 plt.title("Correlation Coefficient, dataset " + str(dset), fontsize = 18)
 min_ylim, max_ylim = plt.ylim()
-plt.text(np.mean(simDat)*1.001, max_ylim*0.9, 'Median: {:.2f}'.format(np.mean(simDat)))
-plt.text(methodsMean*1.001, max_ylim*0.9, 'STM Median: {:.2f}'.format(methodsMean), color='r')
+plt.text(np.mean(simDat)*1.001, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(simDat)))
+plt.text(methodsMean*1.001, max_ylim*0.9, 'STM Mean: {:.2f}'.format(methodsMean), color='r')
 figNo = figNo + 1
 
 plt.figure(figNo)
 simDat = cors3
-methodsMean = medianS3
+methodsMean = meanS3
 dset = dset + 1
+dset = 3
 plt.hist(simDat, color = 'c', edgecolor='k')
 plt.axvline(np.mean(simDat), color='k', linestyle="dashed", alpha = 0.65)
 plt.axvline(methodsMean, color='r', linestyle="dashed", alpha = 0.65)
@@ -155,8 +167,8 @@ plt.ylabel("Count", fontsize =14)
 plt.xlabel("Correlation Coeff.", fontsize = 14)
 plt.title("Correlation Coefficient, dataset " + str(dset), fontsize = 18)
 min_ylim, max_ylim = plt.ylim()
-plt.text(np.mean(simDat)*1.001, max_ylim*0.9, 'Median: {:.2f}'.format(np.mean(simDat)))
-plt.text(methodsMean*1.001, max_ylim*0.9, 'STM Median: {:.2f}'.format(methodsMean), color='r')
+plt.text(np.mean(simDat)*1.001, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(simDat))) #fontsize = 14) too big
+plt.text(methodsMean*1.001, max_ylim*0.9, 'STM Mean: {:.2f}'.format(methodsMean), color='r') #fontsize = 14)
 figNo = figNo + 1
 
 plt.figure(figNo)
@@ -188,6 +200,39 @@ min_ylim, max_ylim = plt.ylim()
 plt.text(np.mean(simDat)*1.001, max_ylim*0.9, 'Median: {:.2f}'.format(np.mean(simDat)))
 plt.text(methodsMean*1.001, max_ylim*0.9, 'STM Median: {:.2f}'.format(methodsMean), color='r')
 figNo = figNo + 1
+
+
+
+plt.figure(figNo)
+simDat = cors7
+methodsMean = float(stm_df['7.train.spikes'][0])
+dset = 7
+plt.hist(simDat, color = 'c', edgecolor='k')
+plt.axvline(np.mean(simDat), color='k', linestyle="dashed", alpha = 0.65)
+plt.axvline(methodsMean, color='r', linestyle="dashed", alpha = 0.65)
+plt.ylabel("Count", fontsize =14)
+plt.xlabel("Correlation Coeff.", fontsize = 14)
+plt.title("Correlation Coefficient, dataset " + str(dset), fontsize = 18)
+min_ylim, max_ylim = plt.ylim()
+plt.text(np.mean(simDat)*1.01, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(simDat)))
+plt.text(methodsMean*.7, max_ylim*0.9, 'STM Mean: {:.2f}'.format(methodsMean), color='r')
+figNo = figNo + 1
+
+plt.figure(figNo)
+simDat = cors8
+methodsMean = float(stm_df['8.train.spikes'][0])
+dset = 8
+plt.hist(simDat, color = 'c', edgecolor='k')
+plt.axvline(np.mean(simDat), color='k', linestyle="dashed", alpha = 0.65)
+plt.axvline(methodsMean, color='r', linestyle="dashed", alpha = 0.65)
+plt.ylabel("Count", fontsize =14)
+plt.xlabel("Correlation Coeff.", fontsize = 14)
+plt.title("Correlation Coefficient, dataset " + str(dset), fontsize = 18)
+min_ylim, max_ylim = plt.ylim()
+plt.text(np.mean(simDat)*1.01, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(simDat)))
+plt.text(methodsMean*.55, max_ylim*0.9, 'STM Mean: {:.2f}'.format(methodsMean), color='r')
+figNo = figNo + 1
+
 
 
 

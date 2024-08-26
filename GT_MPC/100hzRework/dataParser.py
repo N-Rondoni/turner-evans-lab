@@ -3,7 +3,6 @@ from collections import defaultdict
 
 
 
-# this shit broken don't use
 def pcc(file_path, algorithm_name):
     corr_data = defaultdict(list) 
     with open(file_path, mode='r') as file:
@@ -28,6 +27,15 @@ def medianFromDset(df, algorithm, dset):
     
     return overall_med
 
+
+def meanFromDset(df, algorithm, dset):
+    # Filter the DataFrame based on the algorithm and dataset
+    filtered_df = df[(df['algo'] == algorithm) & (df['dset'] == dset)]
+    
+    # Compute the mean of the 'value' column for both 'train' and 'test' data
+    overall_med = filtered_df['value'].mean()
+    
+    return overall_med
 
 
 

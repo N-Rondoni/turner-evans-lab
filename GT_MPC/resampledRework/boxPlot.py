@@ -40,7 +40,8 @@ plt.boxplot([cors1, cors2, cors3, cors4, cors5, cors6, cors7, cors8, cors9, cors
 plt.figure(3)
 binVals= np.linspace(0,1,11)
 #print(binVals)
-stmMeanCor = 0.3866859940274038 # found with computations below
+#stmMeanCor = 0.3866859940274038 # found with computations below, only on test data. 
+stmMeanCor = .4244426
 plt.hist(cors, color = 'c', edgecolor = 'k')#, bins = binVals)
 plt.axvline(np.mean(cors), color='k', linestyle="dashed", alpha = 0.65)
 plt.axvline(stmMeanCor, color = 'r', linestyle="dashed", alpha = 0.65)
@@ -50,7 +51,7 @@ plt.title("Correlation coefficients across all datasets", fontsize = 18)
 min_ylim, max_ylim = plt.ylim()
 #plt.text(np.mean(allVPDs)*1.1, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(allVPDs)))
 plt.text(np.mean(cors)*0.6, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(cors)))
-plt.text(stmMeanCor*1.2, max_ylim*0.9, 'STM Mean: {:.2f}'.format(np.mean(cors)), color = 'r')
+plt.text(stmMeanCor*1.2, max_ylim*0.9, 'STM Mean: {:.2f}'.format(float(stmMeanCor)), color = 'r')
 
 # plotting VP distances
 
@@ -73,18 +74,36 @@ plt.xlabel("Victor-Purpura Distance", fontsize = 14)
 plt.title("Victor-Purpura distances for datasets less than 2000", fontsize = 18)
 
 file_path1 = 'data/results_22_06_17.csv'
+file_path2 = 'data/spikefinder.csv'
 df = pd.read_csv(file_path1)
 stm_df = df[(df['algo'] == 'stm')]
-#print(stm_df)
-print(stm_df['value'].mean()) # used to place mean line in earlier plot
+print("stm average on test data:", stm_df['value'].mean()) # used to place mean line in earlier plot
 
 
-# swapped to median, keeping names as mean bc bad programmer
-meanD1 = medianFromDset(df, 'deneux', 1)
-meanD2 = medianFromDset(df, 'deneux', 2)
-meanD3 = medianFromDset(df, 'deneux', 3)
-meanD4 = medianFromDset(df, 'deneux', 4)
-meanD5 = medianFromDset(df, 'deneux', 5)
+
+#df1 = pd.read_csv(file_path2)
+stm_df = pcc(file_path2, 'stm')
+#print(list(stm_df.keys()))
+#print(stm_df['1.test.spikes'])
+j = 0
+runSum = 0
+for key in stm_df:
+    temp = stm_df[key]
+    res = float(temp[0])
+    runSum = runSum + res
+    j = j + 1
+print("average for stm across all datasets:", runSum/j)
+
+
+#stm_df = df1[(df1['algo_algorithm'] == 'stm')]
+#print(stm_df['value'].mean()) # used to place mean line in earlier plot
+#print(stm_df.keys())
+#
+medianD1 = medianFromDset(df, 'deneux', 1)
+medianD2 = medianFromDset(df, 'deneux', 2)
+medianD3 = medianFromDset(df, 'deneux', 3)
+medianD4 = medianFromDset(df, 'deneux', 4)
+medianD5 = medianFromDset(df, 'deneux', 5)
 
 medianS1 = medianFromDset(df, 'stm', 1)
 medianS2 = medianFromDset(df, 'stm', 2)

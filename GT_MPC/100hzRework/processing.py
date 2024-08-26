@@ -218,8 +218,8 @@ if __name__=="__main__":
                     # split Victur-Purpura computations into two (can run on subsets then add results, getting same score).
                     # this must be done for certain data sets if you have less than 16GB ram.    
                     Nreduced = int(len(spikeDatDown)/2)
-                    VPDtemp1 = VPdis(spikeDatDown[0:Nreduced], simSpikeDown[0:Nreduced], 1) 
-                    VPDtemp2 = VPdis(spikeDatDown[Nreduced:-1], simSpikeDown[Nreduced:-1], 1) 
+                    VPDtemp1 = VPdis(spikeDatDown[0:Nreduced], simSpikeDown[0:Nreduced], 10) 
+                    VPDtemp2 = VPdis(spikeDatDown[Nreduced:-1], simSpikeDown[Nreduced:-1], 10) 
                     sumVPD = VPDtemp1 + VPDtemp2
                     #print(sumVPD)
                     #VPD = VPdis(spikeDatDown, simSpikeDown, 1)

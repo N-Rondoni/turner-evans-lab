@@ -112,7 +112,7 @@ if __name__=="__main__":
     
   
     #CI_Meas = movingAverage(CI_Meas, 30)
-    CI_Meas = sigmoid(CI_Meas) - 0.15
+    CI_Meas = sigmoid(CI_Meas) - 0.25
 
     # set up timevec, recordings were made at 59.1 hz
 
