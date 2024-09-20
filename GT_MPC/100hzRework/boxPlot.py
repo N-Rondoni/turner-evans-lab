@@ -42,29 +42,40 @@ binVals= np.linspace(0,1,11)
 #print(binVals)
 #stmMeanCor = 0.3866859940274038 # found with computations below, only on test data. 
 stmMeanCor = .4244426
+oasisMeanCorInfo = 0.45 #$ from jneursci stringer paper
+oasisMeanCorNoInfo = 0.3397627 
+oasisInfoColor = "magenta"#"hotpink"#"darkorchid"#"hotpink"
+oasisNoInfoColor = "green"#"Seagreen"#"indigo"#"seagreen"
 plt.hist(cors, color = 'c', edgecolor = 'k')#, bins = binVals)
 plt.axvline(np.mean(cors), color='k', linestyle="dashed", alpha = 0.65)
 plt.axvline(stmMeanCor, color = 'r', linestyle="dashed", alpha = 0.65)
-plt.ylabel("Count", fontsize =14)
-plt.xlabel("Correlation Coefficient", fontsize = 14)
-plt.title("Correlation coefficients across all datasets", fontsize = 18)
+plt.axvline(oasisMeanCorInfo, color = oasisInfoColor, linestyle="dashed", alpha = 0.65)
+plt.axvline(oasisMeanCorNoInfo, color = oasisNoInfoColor, linestyle="dashed", alpha = 0.65)
+plt.ylabel("Count", fontsize =16)
+plt.xlabel("Correlation Coefficient", fontsize = 16)
+plt.title("Correlation Coefficients, All Datasets", fontsize = 20)
 min_ylim, max_ylim = plt.ylim()
 #plt.text(np.mean(allVPDs)*1.1, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(allVPDs)))
-plt.text(np.mean(cors)*0.6, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(cors)))
+plt.text(np.mean(cors)*.89, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(cors)))
 plt.text(stmMeanCor*1.01, max_ylim*0.9, 'STM Mean: {:.2f}'.format(float(stmMeanCor)), color = 'r')
+plt.text(oasisMeanCorInfo*1.01, max_ylim*0.8, 'Oasis Mean: {:.2f}'.format(float(oasisMeanCorInfo)), color = oasisInfoColor)
+plt.text(oasisMeanCorNoInfo*.8, max_ylim*0.9, 'Oasis* Mean: {:.2f}'.format(float(oasisMeanCorNoInfo)), color = oasisNoInfoColor)
+
 
 # plotting VP distances
-
+oasisVPDmedian = 901.39 # computed in oasis directory, boxplot.py 
 plt.figure(4)
-plt.hist(allVPDs, color='violet', edgecolor="k",bins=20)
+plt.hist(allVPDs[allVPDs<=7000], color='violet', edgecolor="k",bins=20)
 plt.axvline(np.median(allVPDs), color='k', linestyle="dashed", alpha = 0.65)
+plt.axvline(oasisVPDmedian, color=oasisNoInfoColor, linestyle="dashed", alpha = 0.65)
 #plt.axvline(np.mean(allVPDs), color='r', linestyle="dashed", alpha = 0.65)
-plt.ylabel("Count", fontsize =14)
-plt.xlabel("Victor-Purpura Distance", fontsize = 14)
-plt.title("Victor-Purpura distance, all datasets", fontsize = 18)
+plt.ylabel("Count", fontsize =16)
+plt.xlabel("Victor-Purpura Distance", fontsize = 16)
+plt.title("Victor-Purpura Distance, All Datasets", fontsize = 20)
 min_ylim, max_ylim = plt.ylim()
 #plt.text(np.mean(allVPDs)*1.1, max_ylim*0.9, 'Mean: {:.2f}'.format(np.mean(allVPDs)))
-plt.text(np.median(allVPDs)*1.4, max_ylim*0.9, 'Median: {:.2f}'.format(np.median(allVPDs)))
+plt.text(np.median(allVPDs)*(-.1), max_ylim*0.96, 'Median: {:.2f}'.format(np.median(allVPDs)))
+plt.text(oasisVPDmedian*1.1, max_ylim*0.7, 'Oasis* Median: {:.2f}'.format(oasisVPDmedian), color=oasisNoInfoColor)
 
 
 plt.figure(6)
