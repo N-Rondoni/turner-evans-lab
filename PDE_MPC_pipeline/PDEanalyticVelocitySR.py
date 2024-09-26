@@ -78,7 +78,7 @@ def weightFunc2(x, t):
     velAn = velAn * 1000 # contert to seconds
     scalarMult = (1.5/velAn)*velInterp  #1.5 due to 240 deg -> 360 deg mapping.
     #(1/6.294898346736869)*velInterp
-    print(scalarMult)
+    #print(scalarMult)
 #    print(velInterp)
 #    print(velAn)
 

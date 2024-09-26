@@ -5,8 +5,8 @@ import scipy.io
 import matplotlib.pyplot as plt
 import pingouin as pg
 
-#state = 'Stripe'
-state = 'Dark'
+state = 'Stripe'
+#state = 'Dark'
 
 file_path = 'data/ciDat' + state + '.mat' #must match file in PIDmain.py 
 mat = scipy.io.loadmat(file_path)
@@ -143,9 +143,75 @@ plt.xlabel("t")
 plt.ylabel(r"$\theta$")
 
 
-fig7 = plt.figure()
-plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)i
-plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
+#fig7 = plt.figure()
+#plt.plot(t, mLoc, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)i
+#plt.plot(firingTimesSR, mLoc1, label="Maximal location from PDE")
+#plt.plot(t, thetas, label="max loc without circmean")
+#plt.legend()
+#plt.title("Location of Maximal Firing, Unwrapped, " + state, fontsize = 20)
+#plt.xlabel("t")
+#plt.ylabel(r"$\theta$")
+
+
+# pull max loc from pos, raw CI dat
+print(np.shape(data))
+m, n = np.shape(data)
+mLoc2 = np.zeros(n)
+index_mapping = [0, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15, 8, 16, 9, 17]
+# Copy rows from the input matrix to the new matrix based on the index mapping
+#print(data[1:2, 10:20])
+data = data[index_mapping]  
+#print(data[1:2, 10:20])
+for i in range(n):
+#    m = pg.circ_mean(thetaSpace, firingRates[:,i])
+    m2 = pg.circ_mean(thetaSpace, data[:, i])
+    mLoc2[i] = m2
+mLoc2 = np.unwrap(mLoc2)
+
+
+# convert velocity data to positioning data
+#file_path = "data/velStripe" #velStripe: cond1_allfly2_stripe1_posDatMatch.vrot
+file_path = "data/vel" + state #velDark: cond1_allfly2_dark1_posDatMatch.vrot
+mat = scipy.io.loadmat(file_path)
+#temp = mat['velStripe']
+temp = mat['vel' + state] # print mat to see what options, should be var name in matlab
+(m, n) = temp.shape   # flipped from other data
+realVel = np.zeros(m)
+realVel = temp[:, 0]
+print(m,n)
+
+
+# load in times for samples
+#file_path2 = "data/timeStripe"
+file_path2 = 'data/time' + state
+mat = scipy.io.loadmat(file_path2)
+#temp = mat['timeStripe']
+temp = mat['time' + state]
+(m1, n1) = temp.shape
+timeVec = np.zeros(m1)
+timeVec = temp[:-1, 0] # chop off last time for same number of vel
+tEnd = timeVec[-1]     # this also reshapes
+#
+
+
+
+posDat = np.zeros(len(realVel))
+posDat[0] = mLoc2[0]
+print("posDat", len(posDat))
+print("time len", len(timeVec))
+for i in range(1, len(posDat)):
+#    print(i, t[i])
+#    print(realVel[i])
+    posDat[i] = posDat[i-1] + (timeVec[i] - timeVec[i-1])*realVel[i]*(-1)
+
+posDat = np.unwrap(posDat)
+
+
+fig8 = plt.figure()
+plt.plot(t, unwrapFr, label="Maximal location from MPC") #was plotting (t, thetas) versus (firingTimesSR, thetas1)i
+plt.plot(firingTimesSR, unwrapFrSr, label="Maximal location from PDE")
+plt.plot(timeVec, mLoc2[:-1], label = "Maximal Location from Raw CI Data")
+plt.plot(timeVec, posDat, label = "Maximal location from positioning data")
 #plt.plot(t, thetas, label="max loc without circmean")
 plt.legend()
 plt.title("Location of Maximal Firing, Unwrapped, " + state, fontsize = 20)
@@ -155,201 +221,8 @@ plt.ylabel(r"$\theta$")
 
 
 
-
 plt.show()
-sys.exit()
 
 
 
-
-
-
-
-
-#compare this to actual data
-plt.figure(1)
-plt.imshow(data, aspect='auto')
-plt.title(r"Matrix Visualization of $CI^*_{meas}$", fontsize = 18)
-plt.xlabel(r'Steps of $\Delta t$', fontsize =14)
-plt.ylabel(r'Node', fontsize = 14)
-plt.colorbar()
-
-# fft business, plot amplitudes
-plt.figure(2)
-Ffr = np.fft.rfft(firingRates)
-amplitude = np.abs(Ffr)
-#print(amplitude[1, 0:100])
-#print(amplitude.shape)
-fig = plt.imshow(np.log(amplitude), aspect='auto')
-plt.title(r"Log of Amplitude of $\hat{S}(\omega$)", fontsize=20)
-plt.xlabel(r'Steps of $\Delta \omega$', fontsize = 16)
-plt.ylabel('Node', fontsize = 16)
-plt.colorbar()
-
-# plot power spectrum
-plt.figure(3)
-powerSpec = np.abs(Ffr)**2
-#print(amplitude[1, 0:100])
-#print(amplitude.shape)
-fig = plt.imshow(np.log(powerSpec), aspect='auto')
-plt.title(r"Log of Power Spectrum of $\hat{S}(\omega$)", fontsize = 20)
-plt.xlabel(r'Steps of $\Delta \omega$', fontsize = 16)
-plt.ylabel('Node', fontsize = 16)
-plt.colorbar()
-
-
-# plot phase spectrum
-plt.figure(4)
-Ffr = np.fft.rfft(firingRates)
-phase = np.angle(Ffr)
-#print(amplitude[1, 0:100])
-#print(amplitude.shape)
-fig = plt.imshow(phase, aspect='auto')
-plt.title(r"Phase Spectrum of $\hat{S}(\omega$)", fontsize = 20)
-plt.xlabel(r'Steps of $\Delta \omega$', fontsize = 16)
-plt.ylabel('Node', fontsize = 16)
-plt.colorbar()
-
-#for i in range(m):
-#    print("max amps:")
-#    print(np.max(amplitude[i,1:]))
-#    print(max(amplitude[i,1:]))
-#    #print((amplitude[i, int((n-1)/2)]))
-#    print("min amps:")
-#    print(min((amplitude[i, :])))
-
-
-# plot firing rates as a heatmap
-plt.figure(5)
-fig = plt.imshow(firingRates, aspect='auto')#, vmin=-2, vmax = 12)
-print(np.median(firingRates))
-#plt.title(r"Heatmap of Log $S(\theta, t)$", fontsize = 20)
-plt.title(r"$S(\theta, t)$ vs Time", fontsize = 20)
-plt.xlabel(r'Steps of $\Delta t$', fontsize =16)
-plt.ylabel(r'Node', fontsize = 16)
-plt.colorbar()
-
-
-imRate = 11.4
-freq = np.fft.rfftfreq(n, 1/imRate)
-
-#print(imRate*.5, imRate*-.5)
-
-#plt.figure(6)
-#plt.plot(freq, Ffr.real[1]**2 + Ffr.imag[1]**2)
-#plt.plot(np.fft.fftshift(freq), np.fft.fftshift(np.log(Ffr.real[0,:]**2 + Ffr.imag[0,:]**2)))
-#plt.plot(freq, amplitude[2])
-#print(freq.shape)
-#print(amplitude.shape)
-
-
-plt.figure(6)
-for i in range(0, 9):
-    plt.plot(freq, np.log(amplitude[i,:]), alpha=0.5, label = 'node '+ str(i))
-    plt.legend(loc='best')
-    plt.title('Semilog Plot of Amplitude vs Frequency', fontsize = 20)
-    plt.xlabel(r'Frequency $\omega$', fontsize = 16)
-    plt.ylabel(r'Log of Amplitude of $\hat{S}(\omega)$', fontsize= 16)
-
-    #print(np.mean(amplitude[i,:]))
-
-
-plt.figure(7)
-#plt.plot(np.fft.fftshift(freq), np.fft.fftshift(np.log(Ffr.real[0,:]**2 + Ffr.imag[0,:]**2)))
-nodeNum = 1
-plt.plot(freq, np.log(amplitude[nodeNum,:]), label='node ' + str(nodeNum))
-plt.title('Single Node Semilog Plot of Amplitude vs Frequency', fontsize = 20)
-plt.xlabel(r'Frequency $\omega$', fontsize = 16)
-plt.ylabel(r'Log of Amplitude of $\hat{S}(\omega)$', fontsize= 16)
-plt.legend(loc= 'best')
-
-
-
-#plt.imshow(np.log(amplitude), aspect='auto')
-plt.figure(8)
-subLength = 150
-FfrSub = np.fft.rfft(firingRates[nodeNum, subLength:])
-freqSub = np.fft.rfftfreq(n - subLength, 1/imRate)
-plt.plot(freqSub, np.log(np.abs(FfrSub))) #using real fft so no shift required. 
-#print(freqSub)
-plt.title('Semilog Plot of Amplitude vs Frequency, Subset', fontsize = 20)
-plt.xlabel(r'Frequency $\omega$', fontsize = 16)
-plt.ylabel(r'Log of Amplitude of $\hat{S}(\omega)$', fontsize= 16)
-plt.legend(loc= 'best')
-
-
-plt.figure(9)
-tVals = np.zeros(n)
-tVals = np.load('data/t_node_' + str(0) + '.npy')
-subt = np.zeros(len(tVals) - 1)
-subt = tVals[:-1]
-subt = tVals
-# the above are needed elsewhere, not necessarily for this plot. 
-for i in range(0, 9):
-    FfrSub = np.fft.rfft(firingRates[i, subLength:])
-    plt.plot(freqSub, np.log(np.abs(FfrSub)), alpha=0.5, label = 'node '+ str(i))
-    plt.legend(loc='best')
-    plt.title('Semilog Plot of Amplitude vs Frequency, subset', fontsize = 20)
-    plt.xlabel(r'Frequency $\omega$', fontsize = 16)
-    plt.ylabel(r'Log of Amplitude of $\hat{S}(\omega)$', fontsize= 16)
-
-
-
-
-#plot firing rates
-plt.figure(10)
-for i in range(1, 9):
-    #plt.plot(subt, np.log(firingRates[i, :]), alpha=0.5, label = 'node '+ str(i))
-    plt.plot(subt[150:], firingRates[i, 150:], alpha=0.5, label = 'node '+ str(i))
-    plt.legend(loc = 'best')
-    plt.title(r'Plot of $S(\theta, t)$ vs Time', fontsize = 20)
-    #plt.title(r'Semilog Plot of $S(\theta, t)$ vs Time', fontsize = 20)
-    plt.xlabel(r'$t$ (s)', fontsize = 16)
-    plt.ylabel(r'Log of $S(\theta, t)$', fontsize = 16)
-    plt.ylabel(r'$S(\theta, t)$', fontsize = 16)
-
-#subset of time
-plt.figure(11)
-for i in range(0, 8):
-    #plt.plot(subt[480:500], np.log(firingRates[i, 480:500]), alpha=0.5, label = 'node '+ str(i))
-    plt.plot(subt[480:500], firingRates[i, 480:500], alpha=0.5, label = 'node '+ str(i))
-    plt.legend(loc = 'best')
-    plt.title(r'$S(\theta, t)$, Subset of Time', fontsize = 20)
-    #plt.title(r'Log Plot of $S(\theta, t)$ vs Time')
-    plt.xlabel(r'$t$ (s)', fontsize = 16)
-    plt.ylabel(r'$S(\theta, t)$', fontsize = 16)
-#   plt.ylabel(r'Log of $S(\theta, t)$', fontsize = 16)
-
-
-# heatmap of CI_sim
-plt.figure(12)
-CIsim = np.zeros((m, n))
-for i in range(0, m):
-    sol = np.load('data/sol_node_' + str(i) + '.npy')
-    CIsim[i, :] = sol[0, :]  #normalized
-plt.title(r"Normalized Matrix Visualization of $CI^*_{sim}$", fontsize = 18)
-plt.xlabel(r'Steps of $\Delta t$', fontsize =14)
-plt.ylabel(r'Node', fontsize = 14)
-plt.imshow(CIsim, aspect='auto')
-plt.colorbar()
-
-# testing plo, node 1 has different IC
-plt.figure(13)
-plt.plot(subt, firingRates[1, :], label = "node 1")
-plt.plot(subt, firingRates[2,:], label = "node 2")
-plt.title(r'$S(\theta, t)$, Few Nodes', fontsize = 20)
-#plt.title(r'Log Plot of $S(\theta, t)$ vs Time')
-plt.xlabel(r'$t$ (s)', fontsize = 16)
-plt.ylabel(r'$S(\theta, t)$', fontsize = 16)
-plt.legend(loc = 'best')
-#
-
-
-plt.show()
-# testing if K_d (diffusion coeff) lines up with expected JRGECO val of 148
-#temp = []
-#for i in range(0, m):
-#    sol = np.load('data/QSSA_sol_node_' + str(i) + '.npy')
-#    kdSim = sol[1, :] * sol[0,:] / (sol[2,:]+.000000001) # CI*Ca^{2+}/CI^*
-#    temp = np.append(temp, np.mean(kdSim))
 

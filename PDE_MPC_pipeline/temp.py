@@ -1,5 +1,7 @@
 # Purposes: deterministic/ continuous apprpoximation of ODEs derived from chemical reaction network
 # attempts to back out firing rate via proportional feedback given recorded concentrations of CI^* (from Janelia)  
+
+# ADAPATED TO INCLUDE UPDATED MPC, doesn't create a throughline? 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
@@ -59,7 +61,6 @@ def plotErr(x, y):
     plt.savefig(filename)
     os.system('cp ' + filename + ' /mnt/c/Users/nicho/Pictures/MPC_CRE_across_nodes/') # only run with this line uncommented if you are Nick
 
-
 def sigmoid(signal):
     #sig = np.zeros(np.shape(signal)):
     sig = 1/(1 + np.exp(-1*(signal - 1)))
@@ -67,20 +68,16 @@ def sigmoid(signal):
 
 
 
+
 if __name__=="__main__":
     # frequently changed parameters:
     #state = 'Stripe'
     state = 'Dark'
+    start = time.time()
 
     penalty = 0.01
     
-    # define initial conditions
-    Ca_0 = 5  #Ca^{2+} [mol/area]?
-    Ci_0 = 50   #CI         
-    CiF_0 = 51  #CI^* #was previously 0, real data readouts start with some concentration.
-    x0 = np.array([Ca_0, Ci_0, CiF_0])
-
-    # Load in Dan's data from janelia.
+        # Load in Dan's data from janelia.
     file_path = 'data/ciDat' + state + '.mat'
     mat = scipy.io.loadmat(file_path)
     data = mat['ciDat' + state] #had to figure out why data class is flyDat from print(mat). No clue. 
@@ -89,8 +86,7 @@ if __name__=="__main__":
     row = int(sys.argv[1])
     # pull corresponding row of data
     CI_Meas = data[row, :] # looks at a single neuron.  
-    CI_Meas = 50*CI_Meas
-    CI_Meas = sigmoid(CI_Meas) - 0.1
+    CI_Meas = CI_Meas
 
     # load in imaging times
     file_path2 = 'data/time' + state + '.mat'
@@ -106,19 +102,34 @@ if __name__=="__main__":
     model_type = 'continuous' # or discrete
     model = do_mpc.model.Model(model_type)
     
+
+    CI_Meas = sigmoid(CI_Meas) - 0.1
+
+    
+    #tEnd = n*(imRate) 
+    print("Simulating until final time", tEnd/60, "minutes, consisting of", n, "data points")
+    #timeVec = np.linspace(0, tEnd, n, endpoint = False) #used in interp call
+    
+
+    # define initial conditions
+    Ca_0 = 5  #Ca^{2+} [mol/area]?
+#    Ci_0 = 7   #CI         
+    CiF_0 = CI_Meas[0]  #CI^* #was previously 0, real data readouts start with some concentration.
+    x0 = np.array([Ca_0, CiF_0])
+
+
+    # follow MPC example ``batch bioreactor`` on do-mpc website
+    model_type = 'continuous' # or discrete
+    model = do_mpc.model.Model(model_type)
+    
     # states struct, optimization variables
-    # S is an unknown parameter. _x denotes var, _p param?
     Ca = model.set_variable('_x', 'Ca')
-    #Ci = model.set_variable('_x', 'Ci') #
+#    Ci = model.set_variable('_x', 'Ci') #
     CiF = model.set_variable('_x', 'CiF')
 
     # define ODEs and parameters, kr << kf
-    kf = 0.0513514
-    kr = 7.6 
-    alpha = 1
-    gamma = 1   # passive diffusion
-    Ca_ext = 100 # constant extracellular calcium. Constant (assumes external is sink)
-
+   
+    #print("you got dset 2 or 4 tho dummy")
     kf = 0.1
     kr = 10 
     alpha = 16.666666 
@@ -126,28 +137,23 @@ if __name__=="__main__":
     L = CiF_0 + 100      # total amount of calcium indicator, assumes 10 units of unflor. calcium indicator.
     baseLine = 1 # 2.5 was nice for row 2
 
-    Ca_0 = 5  #Ca^{2+} [mol/area]?
-#    Ci_0 = 7   #CI         
-    CiF_0 = CI_Meas[0]  #CI^* #was previously 0, real data readouts start with some concentration.
-    x0 = np.array([Ca_0, CiF_0])
-    
     tstep = 1/6
+    #tstep = 1/100 #1/100 seems to just do great
+    #if dset == 1:
+    #    tstep = 1/100
+    #.292995469758242 node: 1 dset: 5 alpha: 10.0 gamma: 0.7333333333333333 kf: 0.2 kr: 10.0 bl 0.5
 
 
-    s = model.set_variable('_u', 's')   # control variable ( input )
-    CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter
+    s = model.set_variable('_u', 's')         # control variable ( input )
+    CI_m = model.set_variable('_tvp', 'Ci_m') # timve varying parameter, or just hardcode
 
     model.set_rhs('Ca', alpha*s - gamma*Ca + kr*CiF - kf*Ca*(L - CiF))
 #   model.set_rhs('Ci', kr*CiF - kf*Ci*Ca)
     model.set_rhs('CiF', (kf*Ca*(L - CiF) - kr*CiF))
    
     model.setup()
-
     mpc = do_mpc.controller.MPC(model)
-    mpc.x0 = x0 #x0 in changable params. 
-    simulator.x0 = x0
-    estimator.x0 = x0
-    mpc.set_initial_guess()
+
     # Optimizer parameters, can change collocation/state discretization here.
     setup_mpc = {
             'n_horizon': 6, # pretty short horizion
@@ -181,7 +187,7 @@ if __name__=="__main__":
     mpc.set_objective(mterm = mterm, lterm = lterm)
     mpc.set_rterm(s = penalty) # sets a penalty on changes in s, defined at top of main for ease
     # see latex doc for description, but essentialy adds penalty*(s_k - s_{k-1}) term.
-
+    
     # make sure the objective/cost updates with CI_measured and time.    
     tvp_template = mpc.get_tvp_template()
     mpc.set_tvp_fun(tvp_fun)
@@ -190,7 +196,39 @@ if __name__=="__main__":
     mpc.bounds['lower', '_u', 's'] = 0 # slow diffusion
     # once mpc.setup() is called, no model parameters can be changed.
     mpc.setup()
-        # finally perform closed loop simulation
+    
+    # Estimator: assume all states can be directly measured
+    estimator = do_mpc.estimator.StateFeedback(model)
+
+
+    # Simulator
+    simulator = do_mpc.simulator.Simulator(model)
+    params_simulator = {
+            'integration_tool': 'cvodes', # look into this
+            'abstol': 1e-10,
+            'reltol': 1e-10,
+            't_step': tstep, # (s) mean step is 6.11368547250401 in data
+            }
+    simulator.set_param(**params_simulator)
+    # account for tvp
+    tvp_template1 = simulator.get_tvp_template() # must differ from previous template name
+    simulator.set_tvp_fun(tvp_fun_sim)
+
+
+    simulator.setup()
+
+    # finally begin closed loop simulation
+    
+       
+    # set for controller, simulator, and estimator
+    mpc.x0 = x0 #x0 in changable params. 
+    simulator.x0 = x0
+    estimator.x0 = x0
+    mpc.set_initial_guess()
+
+    # finally perform closed loop simulation
+
+
     n_steps = 700
     for k in range(n_steps):
         u0 = mpc.make_step(x0)
@@ -198,19 +236,23 @@ if __name__=="__main__":
         x0 = estimator.make_step(y_next)
 
 
-#    print(mpc.data['_u'])
-#    print(mpc.data['_x'])
-#    print(mpc.data['_time'])
-
     # pull final solutions for ease of use
     Ca_f = mpc.data['_x'][:, 0]
-    Ci_f = mpc.data['_x'][:, 1]
-    CiF_f = mpc.data['_x'][:, 2]
+#    Ci_f = mpc.data['_x'][:, 1]
+    CiF_f = mpc.data['_x'][:, 1]
     t_f = mpc.data['_time']
     s = mpc.data['_u']
-   
+    
+    end = time.time()
+    print("Solve completed in",  (end-start)/60, "minutes")
+    
 
-    print(np.shape(mpc.data['_x']))
+    #s = movingAverage(s, 30)
+
+    Ci_f = L - CiF_f
+    #CiF_f = (CiF_f-baseLine)/baseLine # normalize, this was used in cost function
+    CiF_f = sigmoid(CiF_f)
+    
     sol = np.transpose(mpc.data['_x'])
 
     #print(np.shape(Ca_f), np.shape(Ci_f), np.shape(CiF_f) )
