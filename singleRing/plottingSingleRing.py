@@ -37,6 +37,7 @@ def weightFunc(x):
         else: 
             evenOut[i] = b*np.sin(b*k*np.pi*x[i])/(np.pi*x[i]) - vs
             oddOut[i] = gamma*((1/x[i])*(b**2)*k*np.cos(b*k*np.pi*x[i]) - (1/(np.pi * x[i]**2))*b*np.sin(b*k*np.pi*x[i]))
+
     # create odd portion, is derivative of even wrt x  
     totalOut = evenOut + oddOut
     return evenOut, oddOut, totalOut
@@ -181,7 +182,7 @@ def matVis(A):
 if __name__=="__main__":
     # set number of spatial discretizations
     N = 48
-    
+
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
 
@@ -189,14 +190,13 @@ if __name__=="__main__":
     #print(x)
 
     # plot weight function
-    #plotWeights(x, y1, y2, y3)
+    plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
     u0 = initialCondRand(x)
     #u0 = initialCondFlat(x)
-    
-    tStart, tEnd = 0, 400
-    sol = solve_ivp(sys, [tStart, tEnd], u0)
+
+    sol = solve_ivp(sys, [0, 1200], u0)
   
 
     timeGrid, thetaGrid = np.meshgrid(sol.t, x)
@@ -214,3 +214,10 @@ if __name__=="__main__":
     plot3d(thetaGrid, timeGrid, firingRate)
     
 
+    #plot3d(thetaGrid, timeGrid, sol.y)
+    
+    #w = weightMat(x)
+    #matVis(w)
+    #print(w)
+    #eVals, eVecs = np.linalg.eig(w)
+    #np.save("eigVals/eVals.npy", eVals)

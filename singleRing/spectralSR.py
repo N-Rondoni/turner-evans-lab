@@ -147,6 +147,15 @@ def initialCondFlat(x):
         IC[i] = 1
     return IC
 
+def interpBasis(a, size, domain):
+    # takes a point a, returns basis functions g_0(a) through g_n(a)
+    g = np.zeros(size)
+    for i in range(len(g)):
+        if a == domain[i]:
+            g[i] = 1
+        else:
+            g[i] = (1/size)*np.sin(size*(a - domain[i])) * 1/np.tan((a - domain[i])/2)
+    return g
 
 ## Plotting functions ##  -------------------------------------
 def plot3d(x, y, z):
@@ -180,7 +189,7 @@ def matVis(A):
 
 if __name__=="__main__":
     # set number of spatial discretizations
-    N = 48
+    N = 18
     
     # set up theta space
     x = np.linspace(-np.pi, np.pi, N, endpoint=False)
@@ -192,8 +201,8 @@ if __name__=="__main__":
     #plotWeights(x, y1, y2, y3)
    
     # create initial condiitions
-    u0 = initialCondRand(x)
-    #u0 = initialCondFlat(x)
+    #u0 = initialCondRand(x)
+    u0 = initialCondFlat(x)
     
     tStart, tEnd = 0, 400
     sol = solve_ivp(sys, [tStart, tEnd], u0)
@@ -210,7 +219,23 @@ if __name__=="__main__":
         #firingRate[:, i] = 15*linRect(sol.y[:, i])  # more modern correction function.
         firingRate[:, i] = sigma(sol.y[:, i])      # what the author's use.
 
-     
+    
     plot3d(thetaGrid, timeGrid, firingRate)
     
+    # with a solution computed, can interpolate using psuedospectral methods for analytical soln
+    exactFrEnergy = np.zeros((m, n))
+    
+    # perform interpolation here. 
+    for tStep in range(n): 
+        for i in range(m):
+            g = interpBasis(x[i], N, x)
+            exactFrEnergy[i, tStep] = np.sum(sol.y[:, tStep] * g)
+    
+    exactFr = np.zeros((m, n))
+    for i in range(n):
+        exactFr[:, i] = sigma(exactFrEnergy[:, i])
+    
+    plot3d(thetaGrid, timeGrid, exactFr)
+
+
 
